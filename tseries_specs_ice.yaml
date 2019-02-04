@@ -1,0 +1,5 @@
+aice:
+    component: ice
+    stream: cice.h
+    weight_op: integrate
+    reduce_dims: [nj, ni]

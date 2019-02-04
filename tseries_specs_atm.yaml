@@ -1,0 +1,68 @@
+TS:
+    component: atm
+    stream: cam.h0
+    weight_op: average
+    reduce_dims: [lat, lon]
+CO2:
+    component: atm
+    stream: cam.h0
+    weight_op: average
+    reduce_dims: [lat, lon]
+    unit_conv: (28.966 g)/(44 g) # convert from (g CO2)/(g dry air) to (mol CO2)/(mol dry air)
+    units_out: ppmv
+SFCO2:
+    component: atm
+    stream: cam.h0
+    weight_op: integrate
+    reduce_dims: [lat, lon]
+    unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
+    units_out: Pg yr-1
+TMCO2:
+    component: atm
+    stream: cam.h0
+    weight_op: integrate
+    reduce_dims: [lat, lon]
+    unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
+    units_out: Pg
+SFCO2_OCN:
+    component: atm
+    stream: cam.h0
+    weight_op: integrate
+    reduce_dims: [lat, lon]
+    unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
+    units_out: Pg yr-1
+TMCO2_OCN:
+    component: atm
+    stream: cam.h0
+    weight_op: integrate
+    reduce_dims: [lat, lon]
+    unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
+    units_out: Pg
+SFCO2_LND:
+    component: atm
+    stream: cam.h0
+    weight_op: integrate
+    reduce_dims: [lat, lon]
+    unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
+    units_out: Pg yr-1
+TMCO2_LND:
+    component: atm
+    stream: cam.h0
+    weight_op: integrate
+    reduce_dims: [lat, lon]
+    unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
+    units_out: Pg
+SFCO2_FFF:
+    component: atm
+    stream: cam.h0
+    weight_op: integrate
+    reduce_dims: [lat, lon]
+    unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
+    units_out: Pg yr-1
+TMCO2_FFF:
+    component: atm
+    stream: cam.h0
+    weight_op: integrate
+    reduce_dims: [lat, lon]
+    unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
+    units_out: Pg

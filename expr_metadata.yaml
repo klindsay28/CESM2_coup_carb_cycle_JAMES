@@ -1,0 +1,103 @@
+experiments:
+    type: cesm
+    data_sources:
+        piControl:
+            - case: b.e21.B1850.f09_g17.CMIP6-piControl.001
+              ctrl_experiment: None
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.B1850.f09_g17.CMIP6-piControl.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+        1pctCO2:
+            - case: b.e21.B1PCT.f09_g17.CMIP6-1pctCO2.001
+              ctrl_experiment: piControl
+              ctrl_branch_year: 501
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.B1PCT.f09_g17.CMIP6-1pctCO2.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+        historical:
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.001
+              ctrl_experiment: piControl
+              ctrl_branch_year: 601
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.002
+              ctrl_experiment: piControl
+              ctrl_branch_year: 631
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.002
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.003
+              ctrl_experiment: piControl
+              ctrl_branch_year: 661
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.003
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.004
+              ctrl_experiment: piControl
+              ctrl_branch_year: 501
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.004
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.005
+              ctrl_experiment: piControl
+              ctrl_branch_year: 691
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.005
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.006
+              ctrl_experiment: piControl
+              ctrl_branch_year: 721
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.006
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.007
+              ctrl_experiment: piControl
+              ctrl_branch_year: 751
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.007
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.008
+              ctrl_experiment: piControl
+              ctrl_branch_year: 781
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.008
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+            - case: b.e21.BHIST.f09_g17.CMIP6-historical.009
+              ctrl_experiment: piControl
+              ctrl_branch_year: 811
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.009
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+        esm-piControl:
+            - case: b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.002
+              ctrl_experiment: piControl
+              ctrl_branch_year: 501
+              root_dir: /glade/scratch/klindsay/archive/b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.002
+              exclude_dirs: ['*/hist', 'rest/*']
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+        historical-cmip5:
+            - case: b40.20th.1deg.bdrd.001
+              root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.bdrd.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v6
+        esm-hist-cmip5:
+            - case: b40.20th.1deg.coup.001
+              root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.coup.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v6

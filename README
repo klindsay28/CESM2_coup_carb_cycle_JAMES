@@ -1,0 +1,25 @@
+Scripts for analysis and figures related to paper documenting
+coupled carbon cycle in CESM2
+
+intended workflow:
+
+1) generate data catalog of model output with ./build_catalog.py
+
+2) generate timeseries with ./gen_tseries.py
+e.g.,
+./gen_tseries.py --tseries_specs_fname tseries_specs_ocn.yaml --experiments esm-piControl
+
+3) make figures with NotImplemented
+
+--------------------------------------------------------------------------------
+
+caveats:
+
+relies on https://github.com/matt-long/data-catalog
+currently have copy of data_catalog.py and lib_data_catalog/cesm_definitions.yml
+from that repo included in this repo
+
+gen_tseries.py relies on esmlab for computing annual means
+currently assumes that a copy of esmlab has been checked out here, via
+git clone git@github.com:NCAR/esmlab.git
+
