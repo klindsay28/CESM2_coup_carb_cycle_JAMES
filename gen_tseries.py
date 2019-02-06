@@ -10,7 +10,7 @@ import yaml
 from cf_units import Unit
 
 import data_catalog
-from tseries_utils import clean_units, get_weight, tseries_fname
+from tseries_utils import clean_units, get_weight, tseries_fname, tseries_copy_vars
 
 parser = argparse.ArgumentParser(description="generate tseries files")
 parser.add_argument(
@@ -42,10 +42,9 @@ for varname, ts_spec in tseries_specs.items():
                 variable=varname, component=component, stream=stream, experiment=experiment, ensemble=ensemble)
             print(fnames)
 
-            with xr.open_mfdataset(fnames, decode_times=False, decode_coords=False) as ds_tmp:
+            with xr.open_mfdataset(fnames, decode_times=False, decode_coords=False, data_vars='minimal') as ds_tmp:
                 time_chunk_size = math.ceil(ds_tmp.dims['time'] / args.time_chunk_cnt)
                 ds_in = ds_tmp.chunk({'time':time_chunk_size})
-                print(ds_in.chunks)
                 da_in = ds_in[varname]
 
                 var_units = clean_units(da_in.attrs['units'])
@@ -72,23 +71,24 @@ for varname, ts_spec in tseries_specs.items():
                 else:
                     msg = 'weight_op==%s not implemented' % ts_spec['weight_op']
                     raise NotImplemented(msg)
-                
+
                 if 'units_out' in ts_spec:
                     da_out.values = Unit(da_out.attrs['units']).convert(
                         da_out.values, Unit(clean_units(ts_spec['units_out'])))
                     da_out.attrs['units'] = ts_spec['units_out']
 
-                path = os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble))
+                ds_out = da_out.to_dataset()
                 merge_objs = []
                 if 'bounds' in ds_in['time'].attrs:
                     tb = ds_in[ds_in['time'].attrs['bounds']]
                     tb.attrs['units'] = ds_in['time'].attrs['units']
                     tb.attrs['calendar'] = ds_in['time'].attrs['calendar']
-                    merge_objs.append(tb)
-                merge_objs.append(da_out)
-                ds_out = xr.merge(merge_objs)
+                    ds_out = xr.merge((ds_out, tb))
+                for copy_var in tseries_copy_vars(component):
+                    ds_out = xr.merge((ds_out, ds_in[copy_var]))
                 ds_out.attrs = ds_in.attrs
                 datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
                 ds_out.attrs['history'] = 'created by %s at %s' % (__file__, datestamp)
+                path = os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble))
                 ds_out.to_netcdf(path, unlimited_dims='time')
                 print('')

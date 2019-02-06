@@ -3,13 +3,13 @@ TS:
     stream: cam.h0
     weight_op: average
     reduce_dims: [lat, lon]
-CO2:
-    component: atm
-    stream: cam.h0
-    weight_op: average
-    reduce_dims: [lat, lon]
-    unit_conv: (28.966 g)/(44 g) # convert from (g CO2)/(g dry air) to (mol CO2)/(mol dry air)
-    units_out: ppmv
+# CO2:
+#     component: atm
+#     stream: cam.h0
+#     weight_op: average
+#     reduce_dims: [lat, lon]
+#     unit_conv: (28.966 g)/(44 g) # convert from (g CO2)/(g dry air) to (mol CO2)/(mol dry air)
+#     units_out: ppmv
 SFCO2:
     component: atm
     stream: cam.h0

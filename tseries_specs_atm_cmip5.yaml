@@ -1,3 +1,8 @@
+TS:
+    component: atm
+    stream: cam2.h0
+    weight_op: average
+    reduce_dims: [lat, lon]
 SFCO2:
     component: atm
     stream: cam2.h0

@@ -16,6 +16,14 @@ experiments:
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
+        1pctCO2-bgc:
+            - case: b.e21.B1PCT.f09_g17.CMIP6-1pctCO2-bgc.001
+              ctrl_experiment: piControl
+              ctrl_branch_year: 501
+              root_dir: /glade/scratch/klindsay/archive/b.e21.B1PCT.f09_g17.CMIP6-1pctCO2-bgc.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
         historical:
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.001
               ctrl_experiment: piControl
@@ -89,14 +97,57 @@ experiments:
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
+
+        piControl-cmip5:
+            - case: b40.prescribed_carb.001
+              ctrl_experiment: None
+              root_dir: /glade/scratch/klindsay/archive/b40.prescribed_carb.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v6
+        1pctCO2-cmip5:
+            - case: b40.1850_ramp.1deg.ncbdrd.001
+              ctrl_experiment: piControl-cmip5
+              ctrl_branch_year: 151
+              root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbdrd.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v6
+        1pctCO2-bgc-cmip5:
+            - case: b40.1850_ramp.1deg.ncbdrc.001
+              ctrl_experiment: piControl-cmip5
+              ctrl_branch_year: 151
+              root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbdrc.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v6
+        1pctCO2-rad-cmip5:
+            - case: b40.1850_ramp.1deg.ncbcrd.002
+              ctrl_experiment: piControl-cmip5
+              ctrl_branch_year: 151
+              root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbcrd.002
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v6
         historical-cmip5:
             - case: b40.20th.1deg.bdrd.001
+              ctrl_experiment: piControl-cmip5
+              ctrl_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.bdrd.001
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v6
+        esm-piControl-cmip5:
+            - case: b40.coup_carb.004
+              ctrl_experiment: None
+              root_dir: /glade/scratch/klindsay/archive/b40.coup_carb.004
               component_attrs:
                   ocn:
                       grid: POP_gx1v6
         esm-hist-cmip5:
             - case: b40.20th.1deg.coup.001
+              ctrl_experiment: esm-piControl-cmip5
+              ctrl_branch_year: 351
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.coup.001
               component_attrs:
                   ocn:

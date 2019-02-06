@@ -50,9 +50,13 @@ def get_area(ds, component):
         da_ret.attrs['units'] = ds['area'].attrs['units']
         return da_ret
     if component == 'atm':
-        rearth = 6.37122e6
-        area = ds['gw'] + 0*ds['lon']
-        area = (4.0 * math.pi * rearth**2 / area.sum()) * area
+        rearth = 6.37122e6 # radius of earth used in CIME [m]
+        area_earth = 4.0 * math.pi * rearth**2 # area of earth in CIME [m2]
+
+        # normalize area so that sum over 'lat', 'lon' yields area_earth
+        # be explicit about dims in sum, in case ds['gw'] has additional dimensions
+        area = ds['gw'] + 0.0 * ds['lon'] # add 'lon' dimension
+        area = (area_earth / area.sum(dim=('lat', 'lon'))) * area
         area.attrs['units'] = 'm2'
         return area
     msg = 'unknown component %s' % component
@@ -67,6 +71,12 @@ def tseries_fname(varname, component, experiment, ensemble):
     """return relative filename for tseries"""
     return '%s_%s_%s_%02d.nc' % (varname, component, experiment, ensemble)
 
+def tseries_copy_vars(component):
+    """return component specific list of vars to copy into generated tseries files"""
+    if component == 'atm':
+        return ['co2vmr', 'ch4vmr', 'f11vmr', 'f12vmr', 'n2ovmr', 'sol_tsi']
+    return []
+
 def get_tseries(varname, component, stream, experiment):
     """
     return a tseries, as a Dataset object
@@ -78,7 +88,7 @@ def get_tseries(varname, component, stream, experiment):
     for ensemble in entries.ensemble.unique():
         paths.append(os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble)))
     if len(paths) == 1:
-        ds = xr.open_mfdataset(paths, decode_times=False, decode_coords=False)
+        ds = xr.open_dataset(paths[0], decode_times=False, decode_coords=False)
     else:
         ds = xr.open_mfdataset(paths, decode_times=False, decode_coords=False, concat_dim='ensemble')
     return ds
@@ -95,7 +105,7 @@ def time_year_plus_frac(ds, time_name):
         t[tind] = yr + yr_frac
     return t
 
-def tseries_plot_simple(ds, varnames, title, fname=None):
+def tseries_plot_1ds(ds, varnames, title, fname=None):
     """
     create a simple plot of a list of tseries variables
     use units from last tseries variable for ylabel
@@ -103,6 +113,22 @@ def tseries_plot_simple(ds, varnames, title, fname=None):
     t = time_year_plus_frac(ds, 'time')
     for varname in varnames:
         plt.plot(t, ds[varname], label=varname)
+    plt.xlabel('time (years)')
+    plt.ylabel(ds[varname].attrs['units'])
+    plt.legend()
+    plt.title(title)
+    if fname is not None:
+        plt.savefig(fname)
+
+
+def tseries_plot_1var(varname, ds_list, legend_list, title, fname=None):
+    """
+    create a simple plot of a tseries variables for multiple datasets
+    use units from last tseries variable for ylabel
+    """
+    for ds_ind, ds in enumerate(ds_list):
+        t = time_year_plus_frac(ds, 'time')
+        plt.plot(t, ds[varname], label=legend_list[ds_ind])
     plt.xlabel('time (years)')
     plt.ylabel(ds[varname].attrs['units'])
     plt.legend()

@@ -19,7 +19,3 @@ relies on https://github.com/matt-long/data-catalog
 currently have copy of data_catalog.py and lib_data_catalog/cesm_definitions.yml
 from that repo included in this repo
 
-gen_tseries.py relies on esmlab for computing annual means
-currently assumes that a copy of esmlab has been checked out here, via
-git clone git@github.com:NCAR/esmlab.git
-
