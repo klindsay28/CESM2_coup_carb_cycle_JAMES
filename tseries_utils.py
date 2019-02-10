@@ -2,6 +2,8 @@
 
 import math
 import os
+from collections import OrderedDict
+
 import cftime
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,6 +22,12 @@ def clean_units(units):
     for key, value in replacements.items():
         units_ret = units_ret.replace(key, value)
     return units_ret
+
+def dim_cnt_check(ds, varname, dim_cnt):
+    """confirm that varname in ds has dim_cnt dimensions"""
+    if len(ds[varname].dims) != dim_cnt:
+        msg_full = 'unexpected dim_cnt=%d, varname=%s' % (len(ds[varname].dims), varname)
+        raise ValueError(msg_full)
 
 def get_weight(ds, component, reduce_dims):
     """construct averaging/integrating weight appropriate for component and reduce_dims"""
@@ -41,20 +49,24 @@ def get_weight(ds, component, reduce_dims):
 def get_area(ds, component):
     """return area DataArray appropriate for component"""
     if component == 'ocn':
+        dim_cnt_check(ds, 'TAREA', 2)
         return ds['TAREA']
     if component == 'ice':
+        dim_cnt_check(ds, 'tarea', 2)
         return ds['tarea']
     if component == 'lnd':
+        dim_cnt_check(ds, 'landfrac', 2)
+        dim_cnt_check(ds, 'area', 2)
         da_ret = ds['landfrac'] * ds['area']
         da_ret.name = 'area'
         da_ret.attrs['units'] = ds['area'].attrs['units']
         return da_ret
     if component == 'atm':
+        dim_cnt_check(ds, 'gw', 1)
         rearth = 6.37122e6 # radius of earth used in CIME [m]
         area_earth = 4.0 * math.pi * rearth**2 # area of earth in CIME [m2]
 
         # normalize area so that sum over 'lat', 'lon' yields area_earth
-        # be explicit about dims in sum, in case ds['gw'] has additional dimensions
         area = ds['gw'] + 0.0 * ds['lon'] # add 'lon' dimension
         area = (area_earth / area.sum(dim=('lat', 'lon'))) * area
         area.attrs['units'] = 'm2'
@@ -66,6 +78,40 @@ def get_volume(ds, component):
     """return volume DataArray appropriate for component"""
     msg = 'get_volume not implemented for %s' % component
     raise NotImplemented(msg)
+
+def get_rmask(ds, component):
+    """return region mask appropriate for component"""
+    rmask_od = OrderedDict()
+    if component == 'ocn':
+        dim_cnt_check(ds, 'KMT', 2)
+        lateral_dims = ds['KMT'].dims
+        rmask_od['Global'] = xr.where(ds['KMT'] > 0, 1.0, 0.0)
+    if component == 'ice':
+        dim_cnt_check(ds, 'tmask', 2)
+        dim_cnt_check(ds, 'TLAT', 2)
+        lateral_dims = ds['tmask'].dims
+        rmask_od['NH'] = xr.where((ds['tmask'] == 1) & (ds['TLAT'] >= 0.0), 1.0, 0.0)
+        rmask_od['SH'] = xr.where((ds['tmask'] == 1) & (ds['TLAT'] < 0.0), 1.0, 0.0)
+    if component == 'lnd':
+        dim_cnt_check(ds, 'landfrac', 2)
+        lateral_dims = ds['landfrac'].dims
+        rmask_od['Global'] = xr.where(ds['landfrac'] > 0, 1.0, 0.0)
+    if component == 'atm':
+        dim_cnt_check(ds, 'gw', 1)
+        lateral_dims = ('lat', 'lon')
+        rmask_od['Global'] = xr.where((ds['lat'] > -100.0) & (ds['lon'] > -360.0), 1.0, 0.0)
+    if len(rmask_od) == 0:
+        msg = 'unknown component %s' % component
+        raise ValueError(msg)
+
+    rmask = xr.DataArray(np.zeros((len(rmask_od), ds.dims[lateral_dims[0]], ds.dims[lateral_dims[1]])),
+                         dims=('region', lateral_dims[0], lateral_dims[1]),
+                         coords={'region':list(rmask_od.keys())})
+
+    for i, mask_logic in enumerate(rmask_od.values()):
+        rmask.values[i,:,:] = mask_logic
+
+    return rmask
 
 def tseries_fname(varname, component, experiment, ensemble):
     """return relative filename for tseries"""

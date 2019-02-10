@@ -10,7 +10,7 @@ import yaml
 from cf_units import Unit
 
 import data_catalog
-from tseries_utils import clean_units, get_weight, tseries_fname, tseries_copy_vars
+from tseries_utils import clean_units, get_weight, get_rmask, tseries_fname, tseries_copy_vars
 
 parser = argparse.ArgumentParser(description="generate tseries files")
 parser.add_argument(
@@ -20,7 +20,7 @@ parser.add_argument(
 parser.add_argument(
     '--experiments', help='comma separated list of experiments to process', required=True)
 parser.add_argument(
-    '--time_chunk_cnt', help='size of dask chunks in time', type=int, default=1)
+    '--time_chunk_size', help='size of dask chunks in time', type=int, default=4)
 
 args = parser.parse_args()
 
@@ -42,9 +42,7 @@ for varname, ts_spec in tseries_specs.items():
                 variable=varname, component=component, stream=stream, experiment=experiment, ensemble=ensemble)
             print(fnames)
 
-            with xr.open_mfdataset(fnames, decode_times=False, decode_coords=False, data_vars='minimal') as ds_tmp:
-                time_chunk_size = math.ceil(ds_tmp.dims['time'] / args.time_chunk_cnt)
-                ds_in = ds_tmp.chunk({'time':time_chunk_size})
+            with xr.open_mfdataset(fnames, decode_times=False, decode_coords=False, chunks={'time':args.time_chunk_size}, data_vars='minimal') as ds_in:
                 da_in = ds_in[varname]
 
                 var_units = clean_units(da_in.attrs['units'])
@@ -54,6 +52,9 @@ for varname, ts_spec in tseries_specs.items():
 
                 # construct averaging/integrating weight
                 weight = get_weight(ds_in, component, reduce_dims)
+                weight_attrs = weight.attrs
+                weight = get_rmask(ds_in, component) * weight
+                weight.attrs = weight_attrs
 
                 if ts_spec['weight_op'] == 'integrate':
                     da_out = (da_in * weight).sum(dim=reduce_dims)
@@ -90,5 +91,6 @@ for varname, ts_spec in tseries_specs.items():
                 datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
                 ds_out.attrs['history'] = 'created by %s at %s' % (__file__, datestamp)
                 path = os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble))
-                ds_out.to_netcdf(path, unlimited_dims='time')
+                ds_out.to_netcdf(path, unlimited_dims='time',
+                                 encoding={'region':{'dtype':'S1'}})
                 print('')
