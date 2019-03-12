@@ -5,11 +5,9 @@ intended workflow:
 
 1) generate data catalog of model output with ./build_catalog.py
 
-2) generate timeseries with ./gen_tseries.py
-e.g.,
-./gen_tseries.py --tseries_specs_fname tseries_specs_ocn.yaml --experiments esm-piControl
+2) call tseries_mod:tseries_get in the process of performing analysis and/or making figures
 
-3) make figures with NotImplemented
+requested tseries will be generated on the fly if necessary, and stored into the directory tseries
 
 --------------------------------------------------------------------------------
 
@@ -18,4 +16,10 @@ caveats:
 relies on https://github.com/matt-long/data-catalog
 currently have copy of data_catalog.py and lib_data_catalog/cesm_definitions.yml
 from that repo included in this repo
+
+relies on climatology.compute_ann_mean from https://github.com/NCAR/esmlab
+most recent esmlab tag that works is 6e89f2a
+
+tseries computation uses dask_jobqueue.SLURMCluster, which works on NCAR/CISL dav machines, not cheyenne
+It could be modified to detect cheyenne, and switch to dask_jobqueue.PBSCluster
 

@@ -5,6 +5,18 @@ experiments:
             - case: b.e21.B1850.f09_g17.CMIP6-piControl.001
               ctrl_experiment: None
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.B1850.f09_g17.CMIP6-piControl.001
+              clim_year_lo: 401
+              clim_year_hi: 700
+              component_attrs:
+                  ocn:
+                      grid: POP_gx1v7
+        abrupt-4xCO2:
+            - case: b.e21.BCO2x4cmip6.f09_g17.CMIP6-abrupt4xCO2.001
+              ctrl_experiment: piControl
+              ctrl_branch_year: 501
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BCO2x4cmip6.f09_g17.CMIP6-abrupt4xCO2.001
+              clim_year_lo: 121
+              clim_year_hi: 140
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -13,6 +25,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 501
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.B1PCT.f09_g17.CMIP6-1pctCO2.001
+              clim_year_lo: 121
+              clim_year_hi: 140
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -21,6 +35,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 501
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.B1PCT.f09_g17.CMIP6-1pctCO2-bgc.001
+              clim_year_lo: 121
+              clim_year_hi: 140
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -29,6 +45,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 601
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.001
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -36,6 +54,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 631
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.002
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -43,6 +63,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 661
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.003
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -50,6 +72,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 501
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.004
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -57,6 +81,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 691
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.005
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -64,6 +90,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 721
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.006
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -71,6 +99,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 751
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.007
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -78,6 +108,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 781
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.008
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -85,6 +117,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 811
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.009
+              clim_year_lo: 1990
+              clim_year_hi: 2014
               component_attrs:
                   ocn:
                       grid: POP_gx1v7
@@ -93,6 +127,8 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 501
               root_dir: /glade/scratch/klindsay/archive/b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.002
+              clim_year_lo: 31
+              clim_year_hi: 50
               exclude_dirs: ['*/hist', 'rest/*']
               component_attrs:
                   ocn:
@@ -102,6 +138,8 @@ experiments:
             - case: b40.prescribed_carb.001
               ctrl_experiment: None
               root_dir: /glade/scratch/klindsay/archive/b40.prescribed_carb.001
+              clim_year_lo: 51
+              clim_year_hi: 350
               component_attrs:
                   ocn:
                       grid: POP_gx1v6
@@ -110,6 +148,8 @@ experiments:
               ctrl_experiment: piControl-cmip5
               ctrl_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbdrd.001
+              clim_year_lo: 121
+              clim_year_hi: 140
               component_attrs:
                   ocn:
                       grid: POP_gx1v6
@@ -118,6 +158,8 @@ experiments:
               ctrl_experiment: piControl-cmip5
               ctrl_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbdrc.001
+              clim_year_lo: 121
+              clim_year_hi: 140
               component_attrs:
                   ocn:
                       grid: POP_gx1v6
@@ -126,6 +168,8 @@ experiments:
               ctrl_experiment: piControl-cmip5
               ctrl_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbcrd.002
+              clim_year_lo: 121
+              clim_year_hi: 140
               component_attrs:
                   ocn:
                       grid: POP_gx1v6
@@ -134,6 +178,8 @@ experiments:
               ctrl_experiment: piControl-cmip5
               ctrl_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.bdrd.001
+              clim_year_lo: 1990
+              clim_year_hi: 2005
               component_attrs:
                   ocn:
                       grid: POP_gx1v6
@@ -141,6 +187,8 @@ experiments:
             - case: b40.coup_carb.004
               ctrl_experiment: None
               root_dir: /glade/scratch/klindsay/archive/b40.coup_carb.004
+              clim_year_lo: 251
+              clim_year_hi: 550
               component_attrs:
                   ocn:
                       grid: POP_gx1v6
@@ -149,6 +197,8 @@ experiments:
               ctrl_experiment: esm-piControl-cmip5
               ctrl_branch_year: 351
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.coup.001
+              clim_year_lo: 1990
+              clim_year_hi: 2005
               component_attrs:
                   ocn:
                       grid: POP_gx1v6
