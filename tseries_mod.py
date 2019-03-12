@@ -110,8 +110,14 @@ def tseries_gen(varname, component, stream, experiment, ensemble):
     print(fnames)
 
     with open(var_specs_fname, mode='r') as fptr:
-        var_specs = yaml.load(fptr)
-    var_spec = var_specs[component]['vars'][varname]
+        var_specs_all = yaml.load(fptr)
+    var_spec = var_specs_all[component]['vars'][varname]
+
+    # use var specific reduce_dims if it exists, otherwise use reduce_dims for component
+    if 'reduce_dims' in var_spec:
+        reduce_dims = var_spec['reduce_dims']
+    else:
+        reduce_dims = var_specs_all[component]['reduce_dims']
 
     # get rank of varname from first file, used to set chunksize
     with xr.open_dataset(fnames[0], decode_times=False, decode_coords=False) as ds_in:
@@ -143,7 +149,6 @@ def tseries_gen(varname, component, stream, experiment, ensemble):
             var_units = clean_units(da_in.attrs['units'])
             if 'unit_conv' in var_spec:
                 var_units = '(%s)(%s)' % (str(var_spec['unit_conv']), var_units)
-            reduce_dims = var_spec['reduce_dims']
 
             # construct averaging/integrating weight
             weight = get_weight(ds_in, component, reduce_dims)
