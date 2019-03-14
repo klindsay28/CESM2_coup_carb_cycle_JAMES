@@ -17,6 +17,19 @@ def clean_units(units):
         [replacements[token] if token in replacements else token for token in units_split]
     return ''.join(units_split_repl)
 
+def copy_fill_settings(da_in, da_out):
+    """
+    propagate _FillValue and missing_value settings from da_in to da_out
+    return da_out
+    """
+    if '_FillValue' in da_in.encoding:
+        da_out.encoding['_FillValue'] = da_in.encoding['_FillValue']
+    else:
+        da_out.encoding['_FillValue'] = None
+    if 'missing_value' in da_in.encoding:
+        da_out.attrs['missing_value'] = da_in.encoding['missing_value']
+    return da_out
+
 def dim_cnt_check(ds, varname, dim_cnt):
     """confirm that varname in ds has dim_cnt dimensions"""
     if len(ds[varname].dims) != dim_cnt:

@@ -123,10 +123,10 @@ experiments:
                   ocn:
                       grid: POP_gx1v7
         esm-piControl:
-            - case: b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.002
+            - case: b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.004
               ctrl_experiment: piControl
               ctrl_branch_year: 501
-              root_dir: /glade/scratch/klindsay/archive/b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.002
+              root_dir: /glade/scratch/klindsay/archive/b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.004
               clim_year_lo: 31
               clim_year_hi: 50
               exclude_dirs: ['*/hist', 'rest/*']

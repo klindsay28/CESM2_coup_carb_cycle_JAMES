@@ -16,7 +16,7 @@ import dask
 import dask_jobqueue
 
 import data_catalog
-from utils import clean_units, dim_cnt_check, time_set_mid, time_year_plus_frac
+from utils import clean_units, copy_fill_settings, dim_cnt_check, time_set_mid, time_year_plus_frac
 
 var_specs_fname = 'var_specs.yaml'
 
@@ -56,12 +56,31 @@ def tseries_get(varname, component, experiment, stream=None, clobber=False):
         paths.append(tseries_path)
 
     # if there are multiple ensembles, concatenate over ensembles
+    decode_times = False
     if len(paths) > 1:
-        ds = xr.open_mfdataset(paths, concat_dim='ensemble')
+        ds = xr.open_mfdataset(paths, decode_times=decode_times, concat_dim='ensemble')
     else:
-        ds = xr.open_dataset(paths[0])
+        ds = xr.open_dataset(paths[0], decode_times=decode_times)
 
     return ds
+
+def tseries_plot_1var(varname, ds_list, legend_list, title, region_val=None, fname=None):
+    """
+    create a simple plot of a tseries variables for multiple datasets
+    use units from last tseries variable for ylabel
+    """
+    for ds_ind, ds in enumerate(ds_list):
+        t = time_year_plus_frac(ds, 'time')
+        if region_val is None:
+            plt.plot(t, ds[varname], label=legend_list[ds_ind])
+        else:
+            plt.plot(t, ds[varname].sel(region=region_val), label=legend_list[ds_ind])
+    plt.xlabel('time (years)')
+    plt.ylabel(ds[varname].attrs['units'])
+    plt.legend()
+    plt.title(title)
+    if fname is not None:
+        plt.savefig(fname)
 
 def tseries_plot_1ds(ds, varnames, title, region_val=None, fname=None):
     """
@@ -81,19 +100,18 @@ def tseries_plot_1ds(ds, varnames, title, region_val=None, fname=None):
     if fname is not None:
         plt.savefig(fname)
 
-def tseries_plot_1var(varname, ds_list, legend_list, title, region_val=None, fname=None):
+def tseries_plot_vars_vs_var(ds, varname_x, varnames_y, title, region_val=None, fname=None):
     """
-    create a simple plot of a tseries variables for multiple datasets
+    create a simple plot of a list of tseries variables vs a single tseries variabble
     use units from last tseries variable for ylabel
     """
-    for ds_ind, ds in enumerate(ds_list):
-        t = time_year_plus_frac(ds, 'time')
+    for varname_y in varnames_y:
         if region_val is None:
-            plt.plot(t, ds[varname], label=legend_list[ds_ind])
+            plt.plot(ds[varname_x], ds[varname_y], label=varname_y)
         else:
-            plt.plot(t, ds[varname].sel(region=region_val), label=legend_list[ds_ind])
-    plt.xlabel('time (years)')
-    plt.ylabel(ds[varname].attrs['units'])
+            plt.plot(ds[varname_x], ds[varname_y].sel(region=region_val), label=varname_y)
+    plt.xlabel(varname_x + '(' + ds[varname_x].attrs['units'] + ')')
+    plt.ylabel(ds[varname_y].attrs['units'])
     plt.legend()
     plt.title(title)
     if fname is not None:
@@ -142,7 +160,10 @@ def tseries_gen(varname, component, stream, experiment, ensemble):
     # create dask distributed client, connecting to workers
     with dask.distributed.Client(cluster) as client:
 
-        with xr.open_mfdataset(fnames, decode_times=False, decode_coords=False, data_vars='minimal',
+        # do not decode time, because of https://github.com/NCAR/esmlab/issues/93
+        # do not decode coords, because xarray otherwise thinks ULONG,ULAT,TLONG,TLAT are all coordinates of POP 2d fields
+        # data_vars = 'minimal', to avoid introducing time dimension to time-invariant fields when there are multiple files
+        with xr.open_mfdataset(fnames, decode_times=False, data_vars='minimal',
                                chunks={'time': time_chunksize}) as ds_in:
             da_in = ds_in[varname]
 
@@ -175,22 +196,41 @@ def tseries_gen(varname, component, stream, experiment, ensemble):
 
             da_out = da_out.compute()
 
+            # propagate some settings from da_in to da_out
+            da_out.encoding['dtype'] = da_in.encoding['dtype']
+            copy_fill_settings(da_in, da_out)
+
+            # change output units, if requested
             if 'units_out' in var_spec:
                 da_out.values = cf_units.Unit(da_out.attrs['units']).convert(
                     da_out.values, cf_units.Unit(clean_units(var_spec['units_out'])))
                 da_out.attrs['units'] = var_spec['units_out']
 
             ds_out = da_out.to_dataset()
-            merge_objs = []
+            
+            ds_out['time'] = copy_fill_settings(ds_in['time'], ds_out['time'])
+
+            # add time:bounds variable, if specified in ds_in
             if 'bounds' in ds_in['time'].attrs:
-                tb = ds_in[ds_in['time'].attrs['bounds']]
-                tb.attrs['units'] = ds_in['time'].attrs['units']
-                tb.attrs['calendar'] = ds_in['time'].attrs['calendar']
-                ds_out = xr.merge((ds_out, tb))
-            for copy_var in tseries_copy_vars(component):
-                ds_out = xr.merge((ds_out, ds_in[copy_var]))
+                tb_in = ds_in[ds_in['time'].attrs['bounds']]
+                tb_out = tb_in
+                # add units and calendar to time:bounds variable
+                tb_out.attrs['units'] = ds_in['time'].attrs['units']
+                tb_out.attrs['calendar'] = ds_in['time'].attrs['calendar']
+                ds_out = xr.merge((ds_out, copy_fill_settings(tb_in, tb_out)))
+
+            # copy componet specific vars
+            for copy_var_name in tseries_copy_var_names(component):
+                copy_var_in = ds_in[copy_var_name]
+                copy_var_out = copy_var_in
+                ds_out = xr.merge((ds_out, copy_fill_settings(copy_var_in, copy_var_out)))
+
+            # set ds_out.time to mid-interval values
             time_set_mid(ds_out, 'time')
+
+            # copy file attributes
             ds_out.attrs = ds_in.attrs
+
             datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
             ds_out.attrs['history'] = 'created by %s at %s' % (__file__, datestamp)
 
@@ -300,7 +340,7 @@ def tseries_fname(varname, component, experiment, ensemble):
     """return relative filename for tseries"""
     return '%s_%s_%s_%02d.nc' % (varname, component, experiment, ensemble)
 
-def tseries_copy_vars(component):
+def tseries_copy_var_names(component):
     """return component specific list of vars to copy into generated tseries files"""
     if component == 'atm':
         return ['co2vmr', 'ch4vmr', 'f11vmr', 'f12vmr', 'n2ovmr', 'sol_tsi']
