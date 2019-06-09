@@ -132,6 +132,10 @@ ocn:
             weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
             units_out: Pg yr-1
+        FG_ALT_CO2:
+            weight_op: integrate
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            units_out: Pg yr-1
         FvPER_DIC:
             weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
@@ -167,3 +171,12 @@ ocn:
         IRON_FLUX:
             weight_op: integrate
             units_out: Gmol yr-1
+        ATM_COARSE_DUST_FLUX_CPL:
+            weight_op: average
+            units_out: g m-2 yr-1
+        ATM_FINE_DUST_FLUX_CPL:
+            weight_op: average
+            units_out: g m-2 yr-1
+        ATM_BLACK_CARBON_FLUX_CPL:
+            weight_op: average
+            units_out: g m-2 yr-1

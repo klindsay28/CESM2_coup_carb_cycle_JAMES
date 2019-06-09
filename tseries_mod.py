@@ -13,22 +13,39 @@ import xarray as xr
 import yaml
 
 import dask
-import dask_jobqueue
+# import dask_jobqueue
+import ncar_jobqueue
 
 import data_catalog
 from utils import clean_units, copy_fill_settings, dim_cnt_check, time_set_mid, time_year_plus_frac
 
 var_specs_fname = 'var_specs.yaml'
+time_name = 'time'
 
-def tseries_get(varname, component, experiment, stream=None, clobber=False):
+def tseries_get_vars(varnames, component, experiment, stream=None, clobber=False):
     """
-    return a tseries, as a Dataset object
+    return tseries for varnames, as a xarray.Dataset object
+    assumes that data_catalog.set_catalog has been called
+
+    arguments are passed to tseries_get_var
+    """
+    for varind, varname in enumerate(varnames):
+        ds_tmp = tseries_get_var(varname, component, experiment, stream, clobber)
+        if varind == 0:
+            ds = ds_tmp
+        else:
+            ds[varname] = ds_tmp[varname]
+    return ds
+
+def tseries_get_var(varname, component, experiment, stream=None, clobber=False):
+    """
+    return tseries for varname, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
     """
     # if no stream is specified, get the default stream for this component
     if stream is None:
         with open(var_specs_fname, mode='r') as fptr:
-            var_specs = yaml.load(fptr)
+            var_specs = yaml.safe_load(fptr)
         stream = var_specs[component]['stream']
 
     # get matching data_catalog entries
@@ -44,9 +61,15 @@ def tseries_get(varname, component, experiment, stream=None, clobber=False):
         if clobber or (not os.path.exists(tseries_path) and not os.path.exists(tseries_path_genlock)):
             # create genlock file, indicating that tseries_path is being generated
             open(tseries_path_genlock, mode='w').close()
-            # generate timeseries and write it
-            ds = tseries_gen(varname, component, stream, experiment, ensemble)
-            ds.to_netcdf(tseries_path, unlimited_dims='time', encoding={'region':{'dtype':'S1'}})
+            # generate timeseries
+            try:
+                ds = _tseries_gen(varname, component, stream, experiment, ensemble)
+            except:
+                # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
+                os.remove(tseries_path_genlock)
+                raise
+            # write generated timeseries
+            ds.to_netcdf(tseries_path, unlimited_dims=time_name, encoding={'region':{'dtype':'S1'}})
             # remove genlock file, indicating that tseries_path has been generated
             os.remove(tseries_path_genlock)
         # wait until genlock file doesn't exists, in case it was being generated or written
@@ -56,79 +79,90 @@ def tseries_get(varname, component, experiment, stream=None, clobber=False):
         paths.append(tseries_path)
 
     # if there are multiple ensembles, concatenate over ensembles
-    decode_times = False
+    decode_times = True
     if len(paths) > 1:
-        ds = xr.open_mfdataset(paths, decode_times=decode_times, concat_dim='ensemble')
+        ds = xr.open_mfdataset(paths, decode_times=decode_times, concat_dim='ensemble', data_vars=[varname])
+        # force ensemble dimension to be last dimension
+        # this make plotting in tseries_plot_1ds below more straightforward
+        tb_name = ds.time.attrs['bounds']
+        dims = ds[tb_name].dims + ('region', 'ensemble')
+        ds = ds.transpose(*dims)
     else:
         ds = xr.open_dataset(paths[0], decode_times=decode_times)
 
-    return ds
+    return ds.load()
 
-def tseries_plot_1var(varname, ds_list, legend_list, title, region_val=None, fname=None):
+def tseries_plot_1var(varname, ds_list, legend_list, title, figsize=(10, 6), region_val=None, fname=None):
     """
-    create a simple plot of a tseries variables for multiple datasets
+    create a simple plot of a tseries variable for multiple datasets
     use units from last tseries variable for ylabel
     """
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(1, 1, 1)
     for ds_ind, ds in enumerate(ds_list):
-        t = time_year_plus_frac(ds, 'time')
+        t = time_year_plus_frac(ds, time_name)
         if region_val is None:
-            plt.plot(t, ds[varname], label=legend_list[ds_ind])
+            ax.plot(t, ds[varname], label=legend_list[ds_ind])
         else:
-            plt.plot(t, ds[varname].sel(region=region_val), label=legend_list[ds_ind])
-    plt.xlabel('time (years)')
-    plt.ylabel(ds[varname].attrs['units'])
-    plt.legend()
-    plt.title(title)
+            ax.plot(t, ds[varname].sel(region=region_val), label=legend_list[ds_ind])
+    ax.set_xlabel('time (years)')
+    ax.set_ylabel(ds[varname].attrs['units'])
+    ax.legend()
+    ax.set_title(title)
     if fname is not None:
         plt.savefig(fname)
 
-def tseries_plot_1ds(ds, varnames, title, region_val=None, fname=None):
+def tseries_plot_1ds(ds, varnames, title, figsize=(10, 6), region_val=None, fname=None):
     """
     create a simple plot of a list of tseries variables
     use units from last tseries variable for ylabel
     """
-    t = time_year_plus_frac(ds, 'time')
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(1, 1, 1)
+    t = time_year_plus_frac(ds, time_name)
     for varname in varnames:
         if region_val is None:
-            plt.plot(t, ds[varname], label=varname)
+            ax.plot(t, ds[varname], label=varname)
         else:
-            plt.plot(t, ds[varname].sel(region=region_val), label=varname)
-    plt.xlabel('time (years)')
-    plt.ylabel(ds[varname].attrs['units'])
-    plt.legend()
-    plt.title(title)
+            ax.plot(t, ds[varname].sel(region=region_val), label=varname)
+    ax.set_xlabel('time (years)')
+    ax.set_ylabel(ds[varname].attrs['units'])
+    ax.legend()
+    ax.set_title(title)
     if fname is not None:
         plt.savefig(fname)
 
-def tseries_plot_vars_vs_var(ds, varname_x, varnames_y, title, region_val=None, fname=None):
+def tseries_plot_vars_vs_var(ds, varname_x, varnames_y, title, figsize=(10, 6), region_val=None, fname=None):
     """
-    create a simple plot of a list of tseries variables vs a single tseries variabble
+    create a simple plot of a list of tseries variables vs a single tseries variable
     use units from last tseries variable for ylabel
     """
+    fig = plt.figure(figsize=figsize)
+    ax = fig.add_subplot(1, 1, 1)
     for varname_y in varnames_y:
         if region_val is None:
-            plt.plot(ds[varname_x], ds[varname_y], label=varname_y)
+            ax.plot(ds[varname_x], ds[varname_y], label=varname_y)
         else:
-            plt.plot(ds[varname_x], ds[varname_y].sel(region=region_val), label=varname_y)
-    plt.xlabel(varname_x + '(' + ds[varname_x].attrs['units'] + ')')
-    plt.ylabel(ds[varname_y].attrs['units'])
-    plt.legend()
-    plt.title(title)
+            ax.plot(ds[varname_x], ds[varname_y].sel(region=region_val), label=varname_y)
+    ax.set_xlabel(varname_x + '(' + ds[varname_x].attrs['units'] + ')')
+    ax.set_ylabel(ds[varname_y].attrs['units'])
+    ax.legend()
+    ax.set_title(title)
     if fname is not None:
         plt.savefig(fname)
 
-def tseries_gen(varname, component, stream, experiment, ensemble):
+def _tseries_gen(varname, component, stream, experiment, ensemble):
     """
     generate a tseries for a particular ensemble member, return a Dataset object
     assumes that data_catalog.set_catalog has been called
     """
-    print('entering tseries_gen for %s' % varname)
+    print('entering _tseries_gen for %s' % varname)
     fnames = data_catalog.get_files(
         variable=varname, component=component, stream=stream, experiment=experiment, ensemble=ensemble)
     print(fnames)
 
     with open(var_specs_fname, mode='r') as fptr:
-        var_specs_all = yaml.load(fptr)
+        var_specs_all = yaml.safe_load(fptr)
     var_spec = var_specs_all[component]['vars'][varname]
 
     # use var specific reduce_dims if it exists, otherwise use reduce_dims for component
@@ -137,35 +171,40 @@ def tseries_gen(varname, component, stream, experiment, ensemble):
     else:
         reduce_dims = var_specs_all[component]['reduce_dims']
 
-    # get rank of varname from first file, used to set chunksize
-    with xr.open_dataset(fnames[0], decode_times=False, decode_coords=False) as ds_in:
+    # get rank of varname from first file, used to set time chunksize
+    # approximate number of time levels, assuming all files have same number
+    # save time encoding from first file, to restore it in the multi-file case
+    #     https://github.com/pydata/xarray/issues/2921
+    with xr.open_dataset(fnames[0]) as ds_in:
         rank = len(ds_in[varname].dims)
-        tlen = ds_in.dims['time']
+        tlen = ds_in.dims[time_name] * len(fnames)
+        time_chunksize = 12 if rank < 4 else 1
+        ds_in.chunk(chunks={time_name: time_chunksize})
+        time_encoding = ds_in[time_name].encoding
+        var_encoding = ds_in[varname].encoding
 
-    time_chunksize = 12 if rank < 4 else 1
-    
-    # setup environment for parallel dask computations
-    USER = os.environ['USER']
-    processes = 4
-    jobcnt = 4 if tlen <= 12*50 else 16
-    project = 'P93300670'
-    # create SLURM based cluster, startup workers
-    cluster = dask_jobqueue.SLURMCluster(
-        queue='dav', project = project, walltime = '04:00:00',
-        job_extra = ['-o batch_outfiles/slurm-%j.out'],
-        cores = processes, processes = processes, memory = '16GB',
-        local_directory=f'/glade/scratch/{USER}/dask-tmp')
-    cluster.scale(jobcnt*processes)
+    cluster = ncar_jobqueue.NCARCluster()
+    workers = 24
+#     if tlen > 12*200:
+#         workers *= 4
+    cluster.scale(workers)
 
     # create dask distributed client, connecting to workers
     with dask.distributed.Client(cluster) as client:
 
-        # do not decode time, because of https://github.com/NCAR/esmlab/issues/93
-        # do not decode coords, because xarray otherwise thinks ULONG,ULAT,TLONG,TLAT are all coordinates of POP 2d fields
+        print(cluster)
+        print(client)
+
         # data_vars = 'minimal', to avoid introducing time dimension to time-invariant fields when there are multiple files
-        with xr.open_mfdataset(fnames, decode_times=False, data_vars='minimal',
-                               chunks={'time': time_chunksize}) as ds_in:
+        # only chunk in time, because if you chunk over spatial dims, then sum results depend on chunksize
+        #     https://github.com/pydata/xarray/issues/2902
+        with xr.open_mfdataset(fnames, data_vars='minimal',
+                               chunks={time_name: time_chunksize}) as ds_in:
+            # restore encoding for time from first file
+            ds_in[time_name].encoding = time_encoding
+
             da_in = ds_in[varname]
+            da_in.encoding = var_encoding
 
             var_units = clean_units(da_in.attrs['units'])
             if 'unit_conv' in var_spec:
@@ -194,7 +233,8 @@ def tseries_gen(varname, component, stream, experiment, ensemble):
                 msg = 'weight_op==%s not implemented' % var_spec['weight_op']
                 raise NotImplemented(msg)
 
-            da_out = da_out.compute()
+            # force the computation to occur
+            da_out.load()
 
             # propagate some settings from da_in to da_out
             da_out.encoding['dtype'] = da_in.encoding['dtype']
@@ -207,26 +247,22 @@ def tseries_gen(varname, component, stream, experiment, ensemble):
                 da_out.attrs['units'] = var_spec['units_out']
 
             ds_out = da_out.to_dataset()
-            
-            ds_out['time'] = copy_fill_settings(ds_in['time'], ds_out['time'])
+
+            ds_out[time_name] = copy_fill_settings(ds_in[time_name], ds_out[time_name])
 
             # add time:bounds variable, if specified in ds_in
-            if 'bounds' in ds_in['time'].attrs:
-                tb_in = ds_in[ds_in['time'].attrs['bounds']]
-                tb_out = tb_in
-                # add units and calendar to time:bounds variable
-                tb_out.attrs['units'] = ds_in['time'].attrs['units']
-                tb_out.attrs['calendar'] = ds_in['time'].attrs['calendar']
-                ds_out = xr.merge((ds_out, copy_fill_settings(tb_in, tb_out)))
+            if 'bounds' in ds_in[time_name].attrs:
+                tb_name = ds_in[time_name].attrs['bounds']
+                ds_out[tb_name] = ds_in[tb_name]
 
             # copy componet specific vars
             for copy_var_name in tseries_copy_var_names(component):
                 copy_var_in = ds_in[copy_var_name]
                 copy_var_out = copy_var_in
-                ds_out = xr.merge((ds_out, copy_fill_settings(copy_var_in, copy_var_out)))
+                ds_out[copy_var_name] = copy_fill_settings(copy_var_in, copy_var_out)
 
             # set ds_out.time to mid-interval values
-            time_set_mid(ds_out, 'time')
+            time_set_mid(ds_out, time_name)
 
             # copy file attributes
             ds_out.attrs = ds_in.attrs
@@ -234,10 +270,12 @@ def tseries_gen(varname, component, stream, experiment, ensemble):
             datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
             ds_out.attrs['history'] = 'created by %s at %s' % (__file__, datestamp)
 
+            ds_out.attrs['input_file_list'] = ' '.join(fnames)
+
     # close cluster, as it is not needed anymore
     cluster.close()
 
-    return ds_out.compute()
+    return ds_out.load()
 
 def get_weight(ds, component, reduce_dims):
     """construct averaging/integrating weight appropriate for component and reduce_dims"""
@@ -304,8 +342,8 @@ def get_rmask(ds, component):
         dim_cnt_check(ds, 'tmask', 2)
         dim_cnt_check(ds, 'TLAT', 2)
         lateral_dims = ds['tmask'].dims
-        rmask_od['NH'] = xr.where((ds['tmask'] == 1) & (ds['TLAT'].fillna(-100.0) >= 0.0), 1.0, 0.0).compute()
-        rmask_od['SH'] = xr.where((ds['tmask'] == 1) & (ds['TLAT'].fillna(100.0) < 0.0), 1.0, 0.0).compute()
+        rmask_od['NH'] = xr.where((ds['tmask'] == 1) & (ds['TLAT'].fillna(-100.0) >= 0.0), 1.0, 0.0)
+        rmask_od['SH'] = xr.where((ds['tmask'] == 1) & (ds['TLAT'].fillna(100.0) < 0.0), 1.0, 0.0)
     if component == 'lnd':
         dim_cnt_check(ds, 'landfrac', 2)
         lateral_dims = ds['landfrac'].dims

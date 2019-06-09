@@ -4,7 +4,8 @@ import re
 
 import cftime
 import numpy as np
-import xarray as xr
+
+from xr_ds_ex import xr_ds_ex
 
 def clean_units(units):
     """replace some troublesome unit terms with acceptable replacements"""
@@ -87,35 +88,3 @@ def time_year_plus_frac(ds, time_name):
     tvals_days = cftime.date2num(tvals_cftime, 'days since 0000-01-01', calendar='noleap')
 
     return tvals_days / 365.0
-
-def xr_ds_ex(encode_time=False):
-    """return an example xarray.Dataset object, useful for testing functions"""
-
-    # set up values for Dataset, 4 yrs of analytic monthly values
-    days_1yr = np.array([31.0, 28.0, 31.0, 30.0, 31.0, 30.0, 31.0, 31.0, 30.0, 31.0, 30.0, 31.0])
-    time_edges = np.insert(
-        np.cumsum(np.concatenate((days_1yr, days_1yr, days_1yr, days_1yr))), 0, 0)
-    time_bounds_vals = np.stack((time_edges[:-1], time_edges[1:]), axis=1)
-    time_vals = np.mean(time_bounds_vals, axis=1)
-    time_vals_yr = time_vals / 365.0
-    var_vals = np.sin(np.pi * time_vals_yr) * np.exp(-0.1 * time_vals_yr)
-
-    time_units = 'days since 0001-01-01'
-    calendar = 'noleap'
-
-    if encode_time:
-        time_vals = cftime.num2date(time_vals, time_units, calendar)
-        time_bounds_vals = cftime.num2date(time_bounds_vals, time_units, calendar)
-
-    # create Dataset, including time_bounds
-    time_var = xr.DataArray(time_vals, name='time', dims='time', coords={'time':time_vals},
-                            attrs={'bounds':'time_bounds'})
-    if not encode_time:
-        time_var.attrs['units'] = time_units
-        time_var.attrs['calendar'] = calendar
-    time_bounds = xr.DataArray(time_bounds_vals, name='time_bounds', dims=('time', 'd2'),
-                               coords={'time':time_var})
-    var = xr.DataArray(var_vals, name='var', dims='time', coords={'time':time_var})
-    ds = var.to_dataset()
-    ds = xr.merge((ds, time_bounds))
-    return ds

@@ -4,22 +4,56 @@ coupled carbon cycle in CESM2
 intended workflow:
 
 1) generate data catalog of model output with ./build_catalog.py
+This requires pyyaml version 5.1.1 or later.
+Experiment metadata is in the file expr_metadata.yaml.
+The script .build_catalog.py should be rerun if expr_metadata.yaml is updated.
 
-2) call tseries_mod:tseries_get in the process of performing analysis and/or making figures
+2) call
+tseries_mod.tseries_get_vars:
+  return tseries for varnames, as a xarray.Dataset object
+in the process of performing analysis and/or making figures.
+Requested tseries will be generated on the fly if necessary, and stored into the directory tseries.
+The time variable in the returned Dataset is decoded into datetime objects.
+Time in generated tseries is replaced with the midpoint between time:bounds values.
 
-requested tseries will be generated on the fly if necessary, and stored into the directory tseries
+3) var_specs.yaml has metadata on variables that tseries_get_vars works for,
+including the spatial operation (average, integrate), and the desired units of the tseries.
+Unit conversion is done automatically with cf_units.
+
+4) tseries_mod has some basic plotting utilities:
+tseries_plot_1var:
+  create a simple plot of a tseries variable for multiple datasets
+tseries_plot_1ds:
+  create a simple plot of a list of tseries variables
+tseries_plot_vars_vs_var:
+  create a simple plot of a list of tseries variables vs a single tseries variable
+
+Plotting can also be done using xarray and/or matplotlib plotting facilities.
+
+--------------------------------------------------------------------------------
+
+The actual computation of tseries is done by tseries_mod._tseries_gen.
+This is not intended to be called outside of tseries_mod.
+It creates a ncar_jobqueue.NCARCluster on the fly and closes it when the computations are done.
+Settings for the cluster can be placed in ~/.config/dask/jobqueue.yaml
+Non-standard settings that work, so far, are
+jobqueue:
+  pbs:
+    cores: 36                   # Total number of cores per job
+    memory: '108GB'             # Total amount of memory per job (himem nodes)
+    processes: 12               # Number of Python processes per job
+    resource-spec: select=1:ncpus=36:mem=108GB
+
+  slurm:
+    cores: 6                    # Total number of cores per job
+    memory: '54GB'              # Total amount of memory per job
+    processes: 6                # Number of Python processes per job
+
 
 --------------------------------------------------------------------------------
 
 caveats:
 
 relies on https://github.com/matt-long/data-catalog
-currently have copy of data_catalog.py and lib_data_catalog/cesm_definitions.yml
-from that repo included in this repo
-
-relies on climatology.compute_ann_mean from https://github.com/NCAR/esmlab
-most recent esmlab tag that works is 6e89f2a
-
-tseries computation uses dask_jobqueue.SLURMCluster, which works on NCAR/CISL dav machines, not cheyenne
-It could be modified to detect cheyenne, and switch to dask_jobqueue.PBSCluster
-
+Currently, there is a modified copy of data_catalog.py and lib_data_catalog/cesm_definitions.yml
+from that repo included in this repo.

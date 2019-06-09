@@ -75,7 +75,7 @@ def build_catalog(collection_input_file, clobber=False):
 
     #-- open the input file
     with open(collection_input_file) as f:
-        collections = yaml.load(f)
+        collections = yaml.full_load(f)
 
     #-- open the collection definition file
     for catalog_name, collection in collections.items():
@@ -84,7 +84,7 @@ def build_catalog(collection_input_file, clobber=False):
 
         # add check for existence
         with open(f'{libdir}/{collection_type}_definitions.yml') as f:
-            catalog_definition = yaml.load(f)
+            catalog_definition = yaml.full_load(f)
 
         catalog_columns = catalog_definition['catalog_columns']
         for req_col in ['files', 'sequence_order']:
@@ -110,9 +110,11 @@ def _extract_cesm_date_str(filename):
     # should it also return a freq?
     datestrs = [r'\d{12}Z-\d{12}Z',
                 r'\d{10}Z-\d{10}Z',
+                r'\d{10}-\d{10}',                
                 r'\d{8}-\d{8}',
                 r'\d{6}-\d{6}',
-                r'\d{4}-\d{4}']
+                r'\d{4}-\d{4}',
+                r'\d{6}']
 
     for datestr in datestrs:
         match = re.compile(datestr).findall(filename)
@@ -180,7 +182,7 @@ def _build_catalog_cesm(collection, catalog_columns, catalog_definition):
 
             root_dir = d_attrs['root_dir']
             case = d_attrs['case']
-            component_attrs = d_attrs['component_attrs']
+            component_attrs = d_attrs['component_attrs'] if 'component_attrs' in d_attrs else {}
 
             exclude_dirs = []
             if 'exclude_dirs' in d_attrs:

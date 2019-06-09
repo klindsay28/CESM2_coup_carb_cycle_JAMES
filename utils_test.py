@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-import esmlab
+import esmlab_wrap
 
 import utils
 
@@ -9,16 +9,20 @@ print(utils.clean_units('degC'))
 print(utils.clean_units('gC/gN'))
 print(utils.clean_units('meq/m^3'))
 
-for encode_time in [False, True]:
-    print('encode_time = %s' % encode_time)
-    ds = utils.xr_ds_ex(encode_time)
-    print('ds.time vals')
-    print(ds.time[0:12])
+for decode_times in [False, True]:
+    print('******************************')
+    print('decode_times = %s' % decode_times)
+    ds = utils.xr_ds_ex(decode_times)
+
+    ds_ann = esmlab_wrap.compute_ann_mean(ds)
+
+    print(ds)
+    print('**********')
     print('ds.time time_year_plus_frac')
     print(utils.time_year_plus_frac(ds, 'time')[0:12])
-
-    ds_ann = esmlab.climatology.compute_ann_mean(ds)
-    print('ds_ann.time vals')
-    print(ds_ann.time)
+    print('********************')
+    print(ds_ann)
+    print('**********')
     print('ds_ann.time time_year_plus_frac')
     print(utils.time_year_plus_frac(ds_ann, 'time'))
+    
