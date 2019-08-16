@@ -180,3 +180,11 @@ ocn:
         ATM_BLACK_CARBON_FLUX_CPL:
             weight_op: average
             units_out: g m-2 yr-1
+        STF_CFC11:
+            weight_op: integrate
+            unit_conv: (137.37 g)/(mol) # convert from mol to g
+            units_out: Gg yr-1
+        STF_CFC12:
+            weight_op: integrate
+            unit_conv: (120.91 g)/(mol) # convert from mol to g
+            units_out: Gg yr-1
