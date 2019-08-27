@@ -1,0 +1,34 @@
+cancel data/all
+set data "/glade/p/cesmdata/cseg/inputdata/atm/waccm/lb/LBC_1750-2015_CMIP6_GlobAnnAvg_c180926.nc"
+set data "tseries/CO2_atm_esm-hist-cmip5_00.nc"
+set data "tseries/CO2_atm_esm-hist_00.nc"
+
+define axis/calendar=noleap/t="01-JAN-1750":"01-JAN-2016":1/edges/units=years time_obs
+let/units="ppmv" CO2_obs = 1e6*CO2_LBC[d=1,gt=time_obs@asn,y=@ave]
+
+define axis/calendar=noleap/t="01-JAN-1850":"01-JAN-2006":1/edges/units=years time_model_CESM1
+let/units="ppmv" CO2_model_CESM1 = CO2[d=2,gt=time_model_CESM1@ave,k=26]
+
+define axis/calendar=noleap/t="01-JAN-1850":"01-JAN-2015":1/edges/units=years time_model_CESM2
+let/units="ppmv" CO2_model_CESM2 = CO2[d=3,gt=time_model_CESM2@ave,k=32]
+
+plot/thick=3/t="01-JAN-1850":"01-JAN-2015"/title="Surface CO2"/set CO2_model_CESM1, CO2_model_CESM2, CO2_obs
+go unlabel 1 ; go unlabel 2 ; go unlabel 3
+go unlabel 4 ; go unlabel 5 ; go unlabel 6
+ppl plot
+go legline_nu `0.05*8760` `0.05*8760` 0.90 13 0.1 CESM1
+go legline_nu `0.05*8760` `0.05*8760` 0.85 14 0.1 CESM2
+go legline_nu `0.05*8760` `0.05*8760` 0.80 15 0.1 Obs
+frame/file="surf_CO2.png"
+
+message
+
+
+plot/thick=3/t="01-JAN-1850":"01-JAN-2015"/title="Surface CO2 model bias"/set CO2_model_CESM1-CO2_obs[gt=time_model_CESM1], CO2_model_CESM2-CO2_obs[gt=time_model_CESM2]
+go unlabel 1 ; go unlabel 2 ; go unlabel 3
+go unlabel 4 ; go unlabel 5 ; go unlabel 6
+ppl ylab ppmv
+ppl plot
+go legline_nu `0.05*8760` `0.05*8760` 0.90 13 0.1 CESM1
+go legline_nu `0.05*8760` `0.05*8760` 0.85 14 0.1 CESM2
+frame/file="surf_CO2_bias.png"
