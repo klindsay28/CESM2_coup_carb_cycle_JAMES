@@ -92,7 +92,7 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=False):
 
     return ds.load()
 
-def tseries_plot_1var(varname, ds_list, legend_list, title, figsize=(10, 6), region_val=None, fname=None):
+def tseries_plot_1var(varname, ds_list, legend_list, title, figsize=(10, 6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
     """
     create a simple plot of a tseries variable for multiple datasets
     use units from last tseries variable for ylabel
@@ -101,10 +101,8 @@ def tseries_plot_1var(varname, ds_list, legend_list, title, figsize=(10, 6), reg
     ax = fig.add_subplot(1, 1, 1)
     for ds_ind, ds in enumerate(ds_list):
         t = time_year_plus_frac(ds, time_name)
-        if region_val is None:
-            ax.plot(t, ds[varname], label=legend_list[ds_ind])
-        else:
-            ax.plot(t, ds[varname].sel(region=region_val), label=legend_list[ds_ind])
+        seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
+        ax.plot(t, ds[varname].sel(seldict), label=legend_list[ds_ind])
     ax.set_xlabel('time (years)')
     ax.set_ylabel(ds[varname].attrs['units'])
     ax.legend()
@@ -112,7 +110,7 @@ def tseries_plot_1var(varname, ds_list, legend_list, title, figsize=(10, 6), reg
     if fname is not None:
         plt.savefig(fname)
 
-def tseries_plot_1ds(ds, varnames, title, figsize=(10, 6), region_val=None, fname=None):
+def tseries_plot_1ds(ds, varnames, title, figsize=(10, 6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
     """
     create a simple plot of a list of tseries variables
     use units from last tseries variable for ylabel
@@ -120,11 +118,12 @@ def tseries_plot_1ds(ds, varnames, title, figsize=(10, 6), region_val=None, fnam
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(1, 1, 1)
     t = time_year_plus_frac(ds, time_name)
+    seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
     for varname in varnames:
         if region_val is None:
             ax.plot(t, ds[varname], label=varname)
         else:
-            ax.plot(t, ds[varname].sel(region=region_val), label=varname)
+            ax.plot(t, ds[varname].sel(seldict), label=varname)
     ax.set_xlabel('time (years)')
     ax.set_ylabel(ds[varname].attrs['units'])
     ax.legend()
@@ -150,6 +149,24 @@ def tseries_plot_vars_vs_var(ds, varname_x, varnames_y, title, figsize=(10, 6), 
     ax.set_title(title)
     if fname is not None:
         plt.savefig(fname)
+
+def _seldict(ds, region_val, vdim_name, vdim_ind):
+    """
+    return dictionary of dimensions and indices
+    to be used in sel operator
+    """
+
+    seldict = {}
+    if region_val is not None:
+        seldict['region'] = region_val
+    if vdim_name is not None:
+        if vdim_ind is None:
+            vdim_ind_loc = -1 if vdim_name == 'lev' else 0
+        else:
+            vdim_ind_loc = vdim_ind
+        seldict[vdim_name] = ds[vdim_name].values[vdim_ind_loc]
+
+    return seldict
 
 def _tseries_gen(varname, component, stream, experiment, ensemble):
     """
