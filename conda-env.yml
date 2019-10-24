@@ -1,0 +1,26 @@
+name: CESM2_coup_carb_cycle_JAMES
+channels:
+- conda-forge
+- defaults
+dependencies:
+- pip
+- python=3.7
+# core pydata
+- dask
+- dask-jobqueue
+- dask-mpi
+- distributed
+- bottleneck
+- jupyterlab
+- jupyter_contrib_nbextensions
+- matplotlib
+- xarray=0.14.*
+# serialization
+- netcdf4
+# Misc
+- cf_units
+- cftime=1.0.3.4
+- esmpy
+- pip:
+  - git+https://github.com/NCAR/esmlab.git
+  - ncar-jobqueue

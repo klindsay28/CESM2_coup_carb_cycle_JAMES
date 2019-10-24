@@ -81,7 +81,7 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=False):
     # if there are multiple ensembles, concatenate over ensembles
     decode_times = True
     if len(paths) > 1:
-        ds = xr.open_mfdataset(paths, decode_times=decode_times, concat_dim='ensemble', data_vars=[varname])
+        ds = xr.open_mfdataset(paths, decode_times=decode_times, combine='nested', concat_dim='ensemble', data_vars=[varname])
         # force ensemble dimension to be last dimension
         # this make plotting in tseries_plot_1ds below more straightforward
         tb_name = ds.time.attrs['bounds']
@@ -201,7 +201,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
         var_encoding = ds_in[varname].encoding
 
     cluster = ncar_jobqueue.NCARCluster()
-    workers = 24
+    workers = 4
 #     if tlen > 12*200:
 #         workers *= 4
     cluster.scale(workers)
@@ -215,7 +215,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
         # data_vars = 'minimal', to avoid introducing time dimension to time-invariant fields when there are multiple files
         # only chunk in time, because if you chunk over spatial dims, then sum results depend on chunksize
         #     https://github.com/pydata/xarray/issues/2902
-        with xr.open_mfdataset(fnames, data_vars='minimal',
+        with xr.open_mfdataset(fnames, data_vars='minimal', combine='by_coords',
                                chunks={time_name: time_chunksize}) as ds_in:
             # restore encoding for time from first file
             ds_in[time_name].encoding = time_encoding

@@ -9,7 +9,9 @@ import esmlab
 def compute_ann_mean(ds):
     """esmlab wrapper"""
 #     return esmlab.climatology.compute_ann_mean(ds)
-    return esmlab.resample(ds, freq='ann')
+    ds_ann = esmlab.resample(ds, freq='ann')
+    ds_ann['time'] = ds_ann['time'] # ensures indices in ds_ann for time are correct
+    return ds_ann
 
 def compute_mon_anomaly(ds):
     """esmlab wrapper"""
