@@ -81,11 +81,16 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=False):
     # if there are multiple ensembles, concatenate over ensembles
     decode_times = True
     if len(paths) > 1:
-        ds = xr.open_mfdataset(paths, decode_times=decode_times, combine='nested', concat_dim='ensemble', data_vars=[varname])
+        ds = xr.open_mfdataset(paths, decode_times=decode_times,
+                               combine='nested', concat_dim='ensemble', data_vars=[varname])
         # force ensemble dimension to be last dimension
         # this make plotting in tseries_plot_1ds below more straightforward
         tb_name = ds.time.attrs['bounds']
-        dims = ds[tb_name].dims + ('region', 'ensemble')
+        dims = list(ds[tb_name].dims)
+        for dim in ds[varname].dims:
+            if dim != 'ensemble' and dim != 'region' and dim not in dims:
+                dims.append(dim)
+        dims.extend(['region', 'ensemble'])
         ds = ds.transpose(*dims)
     else:
         ds = xr.open_dataset(paths[0], decode_times=decode_times)
@@ -201,9 +206,9 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
         var_encoding = ds_in[varname].encoding
 
     cluster = ncar_jobqueue.NCARCluster()
-    workers = 4
-#     if tlen > 12*200:
-#         workers *= 4
+    workers = 4 if rank < 4 else 8
+    if tlen > 12*200:
+        workers *= 2
     cluster.scale(workers)
 
     # create dask distributed client, connecting to workers

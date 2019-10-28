@@ -132,10 +132,10 @@ experiments:
               clim_year_hi: 2014
 
         piControl-2deg:
-            - case: b.e20.B1850.f19_g17.release_cesm2_1_0.020
+            - case: b.e21.B1850.f19_g17.CMIP6-piControl-2deg.001
               ctrl_experiment: None
               ctrl_branch_year: 1
-              root_dir: /glade/scratch/klindsay/b.e20.B1850.f19_g17.release_cesm2_1_0.020.tmp
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.B1850.f19_g17.CMIP6-piControl-2deg.001
               clim_year_lo: 51
               clim_year_hi: 100
               exclude_dirs: ['*/hist', 'rest/*', '*/h0gm', '*/h0gam', '*/tmpdir', '*/h0zm']
@@ -154,14 +154,28 @@ experiments:
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.001
               clim_year_lo: 1990
               clim_year_hi: 2014
+            - case: b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.002
+              ctrl_experiment: esm-piControl
+              ctrl_branch_year: 151
+              root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.002
+              clim_year_lo: 1990
+              clim_year_hi: 2014
 
         coreII:
-            - case: g.e21.G1850ECOIAF.T62_g17.003
+            - case: g.e21.GOMIPECOIAF.T62_g17.CMIP6-omip1.002
               ctrl_experiment: None
               ctrl_branch_year: 1
-              root_dir: /glade/scratch/mclong/archive/g.e21.G1850ECOIAF.T62_g17.003
-              clim_year_lo: 1
-              clim_year_hi: 62
+              root_dir: /glade/collections/cdg/timeseries-cmip6/g.e21.GOMIPECOIAF.T62_g17.CMIP6-omip1.002
+              clim_year_lo: 311
+              clim_year_hi: 372
+              exclude_dirs: ['*/hist', 'rest/*']
+        JRA:
+            - case: g.e21.GOMIPECOIAF_JRA.TL319_g17.CMIP6-omip2.001
+              ctrl_experiment: None
+              ctrl_branch_year: 1
+              root_dir: /glade/collections/cdg/timeseries-cmip6/g.e21.GOMIPECOIAF_JRA.TL319_g17.CMIP6-omip2.001
+              clim_year_lo: 306
+              clim_year_hi: 366
               exclude_dirs: ['*/hist', 'rest/*']
 
         piControl-cmip5:

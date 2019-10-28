@@ -1,4 +1,4 @@
-name: CESM2_coup_carb_cycle_JAMES
+name: CESM2_coup_carb_cycle_JAMES_tst
 channels:
 - conda-forge
 - defaults
@@ -23,5 +23,5 @@ dependencies:
 - nc-time-axis
 - esmpy
 - pip:
-  - git+https://github.com/NCAR/esmlab.git
+#   - git+https://github.com/NCAR/esmlab.git
   - ncar-jobqueue
