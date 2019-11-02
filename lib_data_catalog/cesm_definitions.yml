@@ -6,8 +6,6 @@ catalog_columns:
   - date_range
   - case
   - ensemble
-  - clim_year_lo
-  - clim_year_hi
   - ctrl_experiment
   - ctrl_branch_year
   - year_offset
