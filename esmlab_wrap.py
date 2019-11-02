@@ -16,8 +16,3 @@ def compute_mon_anomaly(ds):
     """esmlab wrapper"""
 #     return esmlab.climatology.compute_mon_anomaly(ds)
     return esmlab.anomaly(ds, clim_freq='mon')
-
-def compute_mon_climatology(ds):
-    """esmlab wrapper"""
-#     return esmlab.climatology.compute_mon_climatology(ds)
-    return esmlab.climatology(ds, freq='mon')
