@@ -1,190 +1,184 @@
 atm:
     stream: cam.h0
     reduce_dims: [lat, lon]
+    tseries_op: average
     vars:
-        TS:
-            weight_op: average
         CO2:
-            weight_op: average
             unit_conv: (28.966 g)/(44 g) # convert from (g CO2)/(g dry air) to (mol CO2)/(mol dry air)
-            units_out: ppmv
+            display_units: ppmv
         SFCO2:
-            weight_op: integrate
             unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         TMCO2:
-            weight_op: integrate
             unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         CO2_OCN:
-            weight_op: average
             unit_conv: (28.966 g)/(44 g) # convert from (g CO2)/(g dry air) to (mol CO2)/(mol dry air)
-            units_out: ppmv
+            display_units: ppmv
         SFCO2_OCN:
-            weight_op: integrate
             unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         TMCO2_OCN:
-            weight_op: integrate
             unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         CO2_LND:
-            weight_op: average
             unit_conv: (28.966 g)/(44 g) # convert from (g CO2)/(g dry air) to (mol CO2)/(mol dry air)
-            units_out: ppmv
+            display_units: ppmv
         SFCO2_LND:
-            weight_op: integrate
             unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         TMCO2_LND:
-            weight_op: integrate
             unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         CO2_FFF:
-            weight_op: average
             unit_conv: (28.966 g)/(44 g) # convert from (g CO2)/(g dry air) to (mol CO2)/(mol dry air)
-            units_out: ppmv
+            display_units: ppmv
         SFCO2_FFF:
-            weight_op: integrate
             unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         TMCO2_FFF:
-            weight_op: integrate
             unit_conv: (12 g)/(44 g) # convert from g CO2 to g C
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
 ice:
     stream: cice.h
     reduce_dims: [nj, ni]
+    tseries_op: average
     vars:
         aice:
-            weight_op: integrate
-            units_out: 10^12 m2
+            tseries_op: integrate
+            integral_display_units: 10^12 m2
 lnd:
     stream: clm2.h0
     reduce_dims: [lat, lon]
+    tseries_op: average
     vars:
         # TOTECOSYSC components
         CWDC:
-            weight_op: integrate
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         TOTLITC:
-            weight_op: integrate
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         TOTSOMC:
-            weight_op: integrate
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         TOTVEGC:
-            weight_op: integrate
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
 
         # C inventories whose rate of change matches NBP
         TOTECOSYSC:
-            weight_op: integrate
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         XSMRPOOL:
-            weight_op: integrate
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         TOT_WOODPRODC:
-            weight_op: integrate
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
         CROPPROD1C:
-            weight_op: integrate
-            units_out: Pg
+            tseries_op: integrate
+            integral_display_units: Pg
 
         # C fluxes
         NBP:
-            weight_op: integrate
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
 
         # NEP = GPP - ER
         # GPP = NPP + AR
         # ER = AR + HR
         GPP:
-            weight_op: integrate
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         NPP:
-            weight_op: integrate
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         AR:
-            weight_op: integrate
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         HR:
-            weight_op: integrate
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         ER:
-            weight_op: integrate
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         NEP:
-            weight_op: integrate
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
 ocn:
     stream: pop.h
     reduce_dims: [nlat, nlon]
+    tseries_op: average
     vars:
         ATM_CO2:
-            weight_op: average
-            units_out: ppmv
+            display_units: ppmv
         POC_FLUX_100m:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         FG_CO2:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         FG_ALT_CO2:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         FvPER_DIC:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         FvICE_DIC:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         DIC_RIV_FLUX:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         DOC_RIV_FLUX:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         DOCr_RIV_FLUX:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         ALK_RIV_FLUX:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         calcToSed:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         pocToSed:
-            weight_op: integrate
             unit_conv: (12 g)/(mol) # convert from mol to g C
-            units_out: Pg yr-1
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         IRON_FLUX:
-            weight_op: integrate
-            units_out: Gmol yr-1
+            tseries_op: integrate
+            integral_display_units: Gmol yr-1
         ATM_COARSE_DUST_FLUX_CPL:
-            weight_op: average
-            units_out: g m-2 yr-1
+            display_units: g m-2 yr-1
         ATM_FINE_DUST_FLUX_CPL:
-            weight_op: average
-            units_out: g m-2 yr-1
+            display_units: g m-2 yr-1
         ATM_BLACK_CARBON_FLUX_CPL:
-            weight_op: average
-            units_out: g m-2 yr-1
+            display_units: g m-2 yr-1
         STF_CFC11:
-            weight_op: integrate
             unit_conv: (137.37 g)/(mol) # convert from mol to g
-            units_out: Gg yr-1
+            tseries_op: integrate
+            integral_display_units: Gg yr-1
         STF_CFC12:
-            weight_op: integrate
             unit_conv: (120.91 g)/(mol) # convert from mol to g
-            units_out: Gg yr-1
+            tseries_op: integrate
+            integral_display_units: Gg yr-1

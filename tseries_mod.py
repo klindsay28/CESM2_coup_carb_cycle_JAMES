@@ -185,7 +185,11 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
 
     with open(var_specs_fname, mode='r') as fptr:
         var_specs_all = yaml.safe_load(fptr)
-    var_spec = var_specs_all[component]['vars'][varname]
+
+    if varname in var_specs_all[component]['vars']:
+        var_spec = var_specs_all[component]['vars'][varname]
+    else:
+        var_spec = {}
 
     # use var specific reduce_dims if it exists, otherwise use reduce_dims for component
     if 'reduce_dims' in var_spec:
@@ -203,7 +207,6 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
         time_chunksize = 12 if rank < 4 else 1
         ds_in.chunk(chunks={time_name: time_chunksize})
         time_encoding = ds_in[time_name].encoding
-        var_encoding = ds_in[varname].encoding
 
     cluster = ncar_jobqueue.NCARCluster()
     workers = 4 if rank < 4 else 8
@@ -226,7 +229,6 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
             ds_in[time_name].encoding = time_encoding
 
             da_in = ds_in[varname]
-            da_in.encoding = var_encoding
 
             var_units = clean_units(da_in.attrs['units'])
             if 'unit_conv' in var_spec:
@@ -238,12 +240,18 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
             weight = get_rmask(ds_in, component) * weight
             weight.attrs = weight_attrs
 
-            if var_spec['weight_op'] == 'integrate':
+            # use var specific tseries_op if it exists, otherwise use tseries_op for component
+            if 'tseries_op' in var_spec:
+                tseries_op = var_spec['tseries_op']
+            else:
+                tseries_op = var_specs_all[component]['tseries_op']
+
+            if tseries_op == 'integrate':
                 da_out = (da_in * weight).sum(dim=reduce_dims)
                 da_out.name = varname
                 da_out.attrs['long_name'] = 'Integrated '+da_in.attrs['long_name']
                 da_out.attrs['units']=cf_units.Unit('(%s)(%s)' % (weight.attrs['units'], var_units)).format()
-            elif var_spec['weight_op'] == 'average':
+            elif tseries_op == 'average':
                 da_out = (da_in * weight).sum(dim=reduce_dims)
                 ones_masked = xr.ones_like(da_in).where(da_in.notnull())
                 denom = (ones_masked * weight).sum(dim=reduce_dims)
@@ -252,7 +260,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
                 da_out.attrs['long_name'] = 'Averaged '+da_in.attrs['long_name']
                 da_out.attrs['units']=cf_units.Unit(var_units).format()
             else:
-                msg = 'weight_op==%s not implemented' % var_spec['weight_op']
+                msg = 'tseries_op==%s not implemented' % tseries_op
                 raise NotImplemented(msg)
 
             # force the computation to occur
@@ -262,11 +270,12 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
             da_out.encoding['dtype'] = da_in.encoding['dtype']
             copy_fill_settings(da_in, da_out)
 
-            # change output units, if requested
-            if 'units_out' in var_spec:
+            # change output units, if specified in var_spec
+            units_key = 'integral_display_units' if tseries_op == 'integrate' else 'display_units'
+            if units_key in var_spec:
                 da_out.values = cf_units.Unit(da_out.attrs['units']).convert(
-                    da_out.values, cf_units.Unit(clean_units(var_spec['units_out'])))
-                da_out.attrs['units'] = var_spec['units_out']
+                    da_out.values, cf_units.Unit(clean_units(var_spec[units_key])))
+                da_out.attrs['units'] = var_spec[units_key]
 
             ds_out = da_out.to_dataset()
 
