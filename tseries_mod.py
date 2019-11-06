@@ -360,6 +360,13 @@ def get_area(ds, component):
 
 def get_volume(ds, component):
     """return volume DataArray appropriate for component"""
+    if component == 'ocn':
+        dim_cnt_check(ds, 'dz', 1)
+        dim_cnt_check(ds, 'TAREA', 2)
+        volume = ds['dz'] * ds['TAREA']
+        volume.attrs['units'] = 'cm3'
+        return volume
+
     msg = 'get_volume not implemented for %s' % component
     raise NotImplementedError(msg)
 
