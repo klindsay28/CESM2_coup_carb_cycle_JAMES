@@ -72,6 +72,13 @@ experiments:
               ctrl_branch_year: 871
               root_dir: /glade/collections/cdg/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.011
 
+        piControl-icealb:
+            - case: b.e21.B1850.f09_g17.CMIP6-piControl.001_branch2
+              ctrl_experiment: piControl
+              ctrl_branch_year: 811
+              root_dir: /glade/p/cgd/ppc/dbailey/archive/b.e21.B1850.f09_g17.CMIP6-piControl.001_branch2
+              exclude_dirs: ['*/diag', 'climo/*', '*/climo/*']
+
         piControl-waccm:
             - case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
               ctrl_experiment: None
