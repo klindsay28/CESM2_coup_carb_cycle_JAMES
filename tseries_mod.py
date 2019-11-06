@@ -266,7 +266,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
                 da_out.attrs['units']=cf_units.Unit(var_units).format()
             else:
                 msg = 'tseries_op==%s not implemented' % tseries_op
-                raise NotImplemented(msg)
+                raise NotImplementedError(msg)
 
             # force the computation to occur
             da_out.load()
@@ -361,7 +361,7 @@ def get_area(ds, component):
 def get_volume(ds, component):
     """return volume DataArray appropriate for component"""
     msg = 'get_volume not implemented for %s' % component
-    raise NotImplemented(msg)
+    raise NotImplementedError(msg)
 
 def get_rmask(ds, component):
     """return region mask appropriate for component"""
