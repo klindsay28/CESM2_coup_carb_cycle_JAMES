@@ -22,7 +22,7 @@ from utils import clean_units, copy_fill_settings, dim_cnt_check, time_set_mid, 
 var_specs_fname = 'var_specs.yaml'
 time_name = 'time'
 
-def tseries_get_vars(varnames, component, experiment, stream=None, clobber=False):
+def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None):
     """
     return tseries for varnames, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -37,7 +37,7 @@ def tseries_get_vars(varnames, component, experiment, stream=None, clobber=False
             ds[varname] = ds_tmp[varname]
     return ds
 
-def tseries_get_var(varname, component, experiment, stream=None, clobber=False):
+def tseries_get_var(varname, component, experiment, stream=None, clobber=None):
     """
     return tseries for varname, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -51,6 +51,11 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=False):
     # get matching data_catalog entries
     entries = data_catalog.find_in_index(
         variable=varname, component=component, stream=stream, experiment=experiment)
+
+    # if clobber is not specified via argument, check for specification via environment
+    # if not specified via environment, default value is False
+    if clobber is None:
+        clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
 
     # loop over matching ensembles
     paths = []
