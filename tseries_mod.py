@@ -371,9 +371,12 @@ def get_rmask(ds, component):
         lateral_dims = ds['KMT'].dims
         KMT = ds['KMT'].fillna(0)
         rmask_od['Global'] = xr.where(KMT > 0, 1.0, 0.0)
-        rmask_od['SH_mid_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -18.0), 1.0, 0.0)
+        rmask_od['SouOce'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -30.0), 1.0, 0.0)
+        rmask_od['SH_high_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -44.0), 1.0, 0.0)
+        rmask_od['SH_mid_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= -44.0) & (ds['TLAT'].fillna(100.0) < -18.0), 1.0, 0.0)
         rmask_od['low_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= -18.0) & (ds['TLAT'].fillna(100.0) < 18.0), 1.0, 0.0)
-        rmask_od['NH_mid_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 18.0), 1.0, 0.0)
+        rmask_od['NH_mid_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 18.0) & (ds['TLAT'].fillna(100.0) < 49.0), 1.0, 0.0)
+        rmask_od['NH_high_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 49.0), 1.0, 0.0)
     if component == 'ice':
         dim_cnt_check(ds, 'tmask', 2)
         dim_cnt_check(ds, 'TLAT', 2)
