@@ -50,7 +50,8 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=None):
 
     # get matching data_catalog entries
     entries = data_catalog.find_in_index(
-        variable=varname, component=component, stream=stream, experiment=experiment)
+        variable=_varname_resolved(varname, component), component=component,
+        stream=stream, experiment=experiment)
 
     # if clobber is not specified via argument, check for specification via environment
     # if not specified via environment, default value is False
@@ -178,14 +179,29 @@ def _seldict(ds, region_val, vdim_name, vdim_ind):
 
     return seldict
 
+def _varname_resolved(varname, component):
+    """resolve varname to underlying varname that appears in files"""
+
+    with open(var_specs_fname, mode='r') as fptr:
+        var_specs_all = yaml.safe_load(fptr)
+
+    if varname not in var_specs_all[component]['vars']:
+        return varname
+    
+    var_spec = var_specs_all[component]['vars'][varname]
+    
+    return var_spec['varname'] if 'varname' in var_spec else varname
+
 def _tseries_gen(varname, component, stream, experiment, ensemble):
     """
     generate a tseries for a particular ensemble member, return a Dataset object
     assumes that data_catalog.set_catalog has been called
     """
     print('entering _tseries_gen for %s' % varname)
+    varname_resolved = _varname_resolved(varname, component)
     fnames = data_catalog.get_files(
-        variable=varname, component=component, stream=stream, experiment=experiment, ensemble=ensemble)
+        variable=varname_resolved, component=component,
+        stream=stream, experiment=experiment, ensemble=ensemble)
     print(fnames)
 
     with open(var_specs_fname, mode='r') as fptr:
@@ -207,7 +223,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
     # save time encoding from first file, to restore it in the multi-file case
     #     https://github.com/pydata/xarray/issues/2921
     with xr.open_dataset(fnames[0]) as ds_in:
-        rank = len(ds_in[varname].dims)
+        rank = len(ds_in[varname_resolved].dims)
         tlen = ds_in.dims[time_name] * len(fnames)
         time_chunksize = 12 if rank < 4 else 1
         ds_in.chunk(chunks={time_name: time_chunksize})
@@ -233,7 +249,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
             # restore encoding for time from first file
             ds_in[time_name].encoding = time_encoding
 
-            da_in = ds_in[varname]
+            da_in = ds_in[varname_resolved]
 
             var_units = clean_units(da_in.attrs['units'])
             if 'unit_conv' in var_spec:
