@@ -119,6 +119,14 @@ ocn:
     reduce_dims: [nlat, nlon]
     tseries_op: average
     vars:
+        DIC:
+            display_units: mmol m-3
+        DIC_vertint:
+            varname: DIC
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            reduce_dims: [z_t, nlat, nlon]
+            tseries_op: integrate
+            integral_display_units: Pg
         ATM_CO2:
             display_units: ppmv
         POC_FLUX_100m:
