@@ -22,7 +22,7 @@ from utils import clean_units, copy_fill_settings, dim_cnt_check, time_set_mid, 
 var_specs_fname = 'var_specs.yaml'
 time_name = 'time'
 
-def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None):
+def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None, cluster_in=None):
     """
     return tseries for varnames, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -30,14 +30,14 @@ def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None)
     arguments are passed to tseries_get_var
     """
     for varind, varname in enumerate(varnames):
-        ds_tmp = tseries_get_var(varname, component, experiment, stream, clobber)
+        ds_tmp = tseries_get_var(varname, component, experiment, stream, clobber, cluster_in)
         if varind == 0:
             ds = ds_tmp
         else:
             ds[varname] = ds_tmp[varname]
     return ds
 
-def tseries_get_var(varname, component, experiment, stream=None, clobber=None):
+def tseries_get_var(varname, component, experiment, stream=None, clobber=None, cluster_in=None):
     """
     return tseries for varname, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -69,7 +69,7 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=None):
             open(tseries_path_genlock, mode='w').close()
             # generate timeseries
             try:
-                ds = _tseries_gen(varname, component, stream, experiment, ensemble)
+                ds = _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in)
             except:
                 # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
                 os.remove(tseries_path_genlock)
@@ -192,7 +192,7 @@ def _varname_resolved(varname, component):
     
     return var_spec['varname'] if 'varname' in var_spec else varname
 
-def _tseries_gen(varname, component, stream, experiment, ensemble):
+def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
     """
     generate a tseries for a particular ensemble member, return a Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -229,7 +229,8 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
         ds_in.chunk(chunks={time_name: time_chunksize})
         time_encoding = ds_in[time_name].encoding
 
-    cluster = ncar_jobqueue.NCARCluster()
+    # instantiate cluster, if not provided via argument
+    cluster = ncar_jobqueue.NCARCluster() if cluster_in is None else cluster_in
     workers = 4 if rank < 4 else 8
     if tlen > 12*200:
         workers *= 2
@@ -324,8 +325,9 @@ def _tseries_gen(varname, component, stream, experiment, ensemble):
 
             ds_out.attrs['input_file_list'] = ' '.join(fnames)
 
-    # close cluster, as it is not needed anymore
-    cluster.close()
+    # if cluster was instantiated here, close it
+    if cluster_in is None:
+        cluster.close()
 
     return ds_out.load()
 
