@@ -223,7 +223,9 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
     # save time encoding from first file, to restore it in the multi-file case
     #     https://github.com/pydata/xarray/issues/2921
     with xr.open_dataset(fnames[0]) as ds_in:
-        rank = len(ds_in[varname_resolved].dims)
+        vardims = ds_in[varname_resolved].dims
+        rank = len(vardims)
+        vertlen = ds_in.dims[vardims[1]] if rank > 3 else 1
         tlen = ds_in.dims[time_name] * len(fnames)
         time_chunksize = 12 if rank < 4 else 1
         ds_in.chunk(chunks={time_name: time_chunksize})
@@ -231,9 +233,11 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
 
     # instantiate cluster, if not provided via argument
     cluster = ncar_jobqueue.NCARCluster() if cluster_in is None else cluster_in
-    workers = 4 if rank < 4 else 8
-    if tlen > 12*200:
-        workers *= 2
+
+    workers = 2
+    workers += 2 * math.log2(tlen / time_chunksize)
+    workers += 2 * math.log2(vertlen)
+    workers = 2 * round(workers/2) # round to nearest multiple of 2
     cluster.scale(workers)
 
     print(cluster.dashboard_link)
