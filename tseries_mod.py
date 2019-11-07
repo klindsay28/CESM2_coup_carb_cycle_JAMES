@@ -236,11 +236,10 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
         workers *= 2
     cluster.scale(workers)
 
+    print(cluster.dashboard_link)
+
     # create dask distributed client, connecting to workers
     with dask.distributed.Client(cluster) as client:
-
-        print(cluster)
-        print(client)
 
         # data_vars = 'minimal', to avoid introducing time dimension to time-invariant fields when there are multiple files
         # only chunk in time, because if you chunk over spatial dims, then sum results depend on chunksize
