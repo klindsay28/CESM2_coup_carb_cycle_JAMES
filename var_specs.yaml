@@ -149,6 +149,14 @@ ocn:
             unit_conv: (12 g)/(mol) # convert from mol to g C
             tseries_op: integrate
             integral_display_units: Pg yr-1
+        FvPER_ALK:
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
+        FvICE_ALK:
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         DIC_RIV_FLUX:
             unit_conv: (12 g)/(mol) # convert from mol to g C
             tseries_op: integrate
