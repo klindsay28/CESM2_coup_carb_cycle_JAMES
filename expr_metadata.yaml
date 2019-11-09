@@ -77,7 +77,7 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 811
               root_dir: /glade/p/cgd/ppc/dbailey/archive/b.e21.B1850.f09_g17.CMIP6-piControl.001_branch2
-              exclude_dirs: ['*/diag', 'climo/*', '*/climo/*']
+              exclude_dirs: ['*/hist', 'rest/*', '*/diag', 'climo/*', '*/climo/*']
 
         piControl-waccm:
             - case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
