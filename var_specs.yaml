@@ -127,6 +127,18 @@ ocn:
             reduce_dims: [z_t, nlat, nlon]
             tseries_op: integrate
             integral_display_units: Pg
+        DOC_vertint:
+            varname: DOC
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            reduce_dims: [z_t, nlat, nlon]
+            tseries_op: integrate
+            integral_display_units: Pg
+        DOCr_vertint:
+            varname: DOCr
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            reduce_dims: [z_t, nlat, nlon]
+            tseries_op: integrate
+            integral_display_units: Pg
         ATM_CO2:
             display_units: ppmv
         POC_FLUX_100m:
