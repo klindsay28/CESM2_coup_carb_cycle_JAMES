@@ -71,6 +71,15 @@ experiments:
               ctrl_experiment: piControl
               ctrl_branch_year: 871
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.011
+        ssp585:
+            - case: b.e21.BSSP585cmip6.f09_g17.CMIP6-SSP5-8.5.001
+              ctrl_experiment: historical
+              ctrl_branch_year: 2015
+              root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BSSP585cmip6.f09_g17.CMIP6-SSP5-8.5.001
+            - case: b.e21.BSSP585cmip6.f09_g17.CMIP6-SSP5-8.5.002
+              ctrl_experiment: historical
+              ctrl_branch_year: 2015
+              root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BSSP585cmip6.f09_g17.CMIP6-SSP5-8.5.002
 
         piControl-icealb:
             - case: b.e21.B1850.f09_g17.CMIP6-piControl.001_branch2
@@ -97,6 +106,11 @@ experiments:
               ctrl_experiment: piControl-waccm
               ctrl_branch_year: 70
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.003
+        ssp585-waccm:
+            - case: b.e21.BWSSP585cmip6.f09_g17.CMIP6-SSP5-8.5-WACCM.001
+              ctrl_experiment: historical-waccm
+              ctrl_branch_year: 2015
+              root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWSSP585cmip6.f09_g17.CMIP6-SSP5-8.5-WACCM.001
 
         piControl-2deg:
             - case: b.e21.B1850.f19_g17.CMIP6-piControl-2deg.001
