@@ -172,6 +172,11 @@ experiments:
               ctrl_experiment: piControl-cmip5
               ctrl_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.bdrd.001
+        rcp85-cmip5:
+            - case: b40.rcp8_5.1deg.bdrd.001
+              ctrl_experiment: historical-cmip5
+              ctrl_branch_year: 2005
+              root_dir: /glade/scratch/klindsay/archive/b40.rcp8_5.1deg.bdrd.001
         esm-piControl-cmip5:
             - case: b40.coup_carb.004
               ctrl_experiment: None
@@ -182,3 +187,8 @@ experiments:
               ctrl_experiment: esm-piControl-cmip5
               ctrl_branch_year: 351
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.coup.001
+        esm-rcp85-cmip5:
+            - case: b40.rcp8_5.1deg.bprp.002
+              ctrl_experiment: esm-hist-cmip5
+              ctrl_branch_year: 2005
+              root_dir: /glade/scratch/klindsay/archive/b40.rcp8_5.1deg.bprp.002
