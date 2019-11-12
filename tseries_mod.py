@@ -29,12 +29,17 @@ def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None,
 
     arguments are passed to tseries_get_var
     """
+    if clobber is None:
+        clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
+    cluster = ncar_jobqueue.NCARCluster() if cluster_in is None and clobber else cluster_in
     for varind, varname in enumerate(varnames):
-        ds_tmp = tseries_get_var(varname, component, experiment, stream, clobber, cluster_in)
+        ds_tmp = tseries_get_var(varname, component, experiment, stream, clobber, cluster)
         if varind == 0:
             ds = ds_tmp
         else:
             ds[varname] = ds_tmp[varname]
+    if cluster_in is None and clobber:
+        cluster.close()
     return ds
 
 def tseries_get_var(varname, component, experiment, stream=None, clobber=None, cluster_in=None):
@@ -399,12 +404,12 @@ def get_rmask(ds, component):
         lateral_dims = ds['KMT'].dims
         KMT = ds['KMT'].fillna(0)
         rmask_od['Global'] = xr.where(KMT > 0, 1.0, 0.0)
-        rmask_od['SouOce'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -30.0), 1.0, 0.0)
-        rmask_od['SH_high_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -44.0), 1.0, 0.0)
-        rmask_od['SH_mid_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= -44.0) & (ds['TLAT'].fillna(100.0) < -18.0), 1.0, 0.0)
-        rmask_od['low_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= -18.0) & (ds['TLAT'].fillna(100.0) < 18.0), 1.0, 0.0)
-        rmask_od['NH_mid_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 18.0) & (ds['TLAT'].fillna(100.0) < 49.0), 1.0, 0.0)
-        rmask_od['NH_high_lat'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 49.0), 1.0, 0.0)
+        rmask_od['SouOce (90S-30S)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -30.0), 1.0, 0.0)
+        rmask_od['SH_high_lat (90S-44S)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -44.0), 1.0, 0.0)
+        rmask_od['SH_mid_lat (44S-18S)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= -44.0) & (ds['TLAT'].fillna(100.0) < -18.0), 1.0, 0.0)
+        rmask_od['low_lat (18S-18N)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= -18.0) & (ds['TLAT'].fillna(100.0) < 18.0), 1.0, 0.0)
+        rmask_od['NH_mid_lat (18N-49N)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 18.0) & (ds['TLAT'].fillna(100.0) < 49.0), 1.0, 0.0)
+        rmask_od['NH_high_lat (49N-90N)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 49.0), 1.0, 0.0)
     if component == 'ice':
         dim_cnt_check(ds, 'tmask', 2)
         dim_cnt_check(ds, 'TLAT', 2)
