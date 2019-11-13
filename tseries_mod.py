@@ -249,6 +249,8 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
 
     # create dask distributed client, connecting to workers
     with dask.distributed.Client(cluster) as client:
+        # tool to help track down file inconsistencies that trigger errors in open_mfdataset
+        # test_open_mfdataset(fnames, time_chunksize)
 
         # data_vars = 'minimal', to avoid introducing time dimension to time-invariant fields when there are multiple files
         # only chunk in time, because if you chunk over spatial dims, then sum results depend on chunksize
@@ -338,6 +340,12 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
         cluster.close()
 
     return ds_out.load()
+
+def test_open_mfdataset(paths, time_chunksize):
+    for ind in range(len(paths)-1):
+        print(' '.join(['testing open_mfdatset for', paths[ind], paths[ind+1]]))
+        ds = xr.open_mfdataset(paths[ind:ind+2], data_vars='minimal', combine='by_coords',
+                               chunks={time_name: time_chunksize})
 
 def get_weight(ds, component, reduce_dims):
     """construct averaging/integrating weight appropriate for component and reduce_dims"""
