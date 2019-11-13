@@ -1,14 +1,16 @@
 #!/bin/bash
 
-for case in b40.1850_ramp.1deg.ncbdrd.001 ; do
+for case in b40.prescribed_carb.001 \
+            b40.coup_carb.004 \
+            b40.1850_ramp.1deg.ncbdrd.001 ; do
 
    echo $case
 
    mkdir -p /glade/scratch/klindsay/archive/$case/ocn/proc/tseries/monthly
    cd /glade/scratch/klindsay/archive/$case/ocn/proc/tseries/monthly
 
-   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; ls *.DIC.*"
-   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; cget *.DIC.*"
+   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; ls *.DIC.* *.DOC.*"
+   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; cget *.DIC.* *.DOC.*"
 
 done
 
