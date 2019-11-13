@@ -235,6 +235,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
         time_chunksize = 12 if rank < 4 else 1
         ds_in.chunk(chunks={time_name: time_chunksize})
         time_encoding = ds_in[time_name].encoding
+        var_encoding = ds_in[varname].encoding
 
     # instantiate cluster, if not provided via argument
     cluster = ncar_jobqueue.NCARCluster() if cluster_in is None else cluster_in
@@ -261,6 +262,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
             ds_in[time_name].encoding = time_encoding
 
             da_in = ds_in[varname_resolved]
+            da_in.encoding = var_encoding
 
             var_units = clean_units(da_in.attrs['units'])
             if 'unit_conv' in var_spec:
@@ -428,10 +430,6 @@ def get_rmask(ds, component):
         dim_cnt_check(ds, 'landfrac', 2)
         lateral_dims = ds['landfrac'].dims
         rmask_od['Global'] = xr.where(ds['landfrac'] > 0, 1.0, 0.0)
-        rmask_od['SH_mid_lat'] = xr.where((ds['landfrac'] > 0) & (ds['lat'] < -25.0), 1.0, 0.0)
-        rmask_od['SH_low_lat'] = xr.where((ds['landfrac'] > 0) & (ds['lat'] >= -25.0) & (ds['lat'] < 0.0), 1.0, 0.0)
-        rmask_od['NH_low_lat'] = xr.where((ds['landfrac'] > 0) & (ds['lat'] >= 0.0) & (ds['lat'] < 20.0), 1.0, 0.0)
-        rmask_od['NH_mid_lat'] = xr.where((ds['landfrac'] > 0) & (ds['lat'] >= 20.0), 1.0, 0.0)
     if component == 'atm':
         dim_cnt_check(ds, 'gw', 1)
         lateral_dims = ('lat', 'lon')
