@@ -58,61 +58,46 @@ ice:
 lnd:
     stream: clm2.h0
     reduce_dims: [lat, lon]
-    tseries_op: average
+    tseries_op: integrate
     vars:
         # TOTECOSYSC components
         CWDC:
-            tseries_op: integrate
             integral_display_units: Pg
         TOTLITC:
-            tseries_op: integrate
             integral_display_units: Pg
         TOTSOMC:
-            tseries_op: integrate
             integral_display_units: Pg
         TOTVEGC:
-            tseries_op: integrate
             integral_display_units: Pg
 
         # C inventories whose rate of change matches NBP
         TOTECOSYSC:
-            tseries_op: integrate
             integral_display_units: Pg
         XSMRPOOL:
-            tseries_op: integrate
             integral_display_units: Pg
         TOT_WOODPRODC:
-            tseries_op: integrate
             integral_display_units: Pg
         CROPPROD1C:
-            tseries_op: integrate
             integral_display_units: Pg
 
         # C fluxes
         NBP:
-            tseries_op: integrate
             integral_display_units: Pg yr-1
 
         # NEP = GPP - ER
         # GPP = NPP + AR
         # ER = AR + HR
         GPP:
-            tseries_op: integrate
             integral_display_units: Pg yr-1
         NPP:
-            tseries_op: integrate
             integral_display_units: Pg yr-1
         AR:
-            tseries_op: integrate
             integral_display_units: Pg yr-1
         HR:
-            tseries_op: integrate
             integral_display_units: Pg yr-1
         ER:
-            tseries_op: integrate
             integral_display_units: Pg yr-1
         NEP:
-            tseries_op: integrate
             integral_display_units: Pg yr-1
 ocn:
     stream: pop.h
