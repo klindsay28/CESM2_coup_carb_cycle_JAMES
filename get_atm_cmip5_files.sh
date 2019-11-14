@@ -9,6 +9,7 @@ for case in b40.prescribed_carb.001 \
             b40.20th.1deg.coup.001 ; do
 
    echo $case
+   mkdir -p /glade/scratch/klindsay/archive/$case/atm/proc/tseries/monthly
    cd /glade/scratch/klindsay/archive/$case/atm/proc/tseries/monthly
    hsi "cd /CCSM/csm/$case/atm/proc/tseries/monthly ; ls *CO2* *SFCO2* *TMCO2* *TS.*"
    hsi "cd /CCSM/csm/$case/atm/proc/tseries/monthly ; cget *CO2* *SFCO2* *TMCO2* *TS.*"
