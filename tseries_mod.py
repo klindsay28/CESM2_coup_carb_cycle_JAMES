@@ -80,7 +80,7 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=None, c
                 os.remove(tseries_path_genlock)
                 raise
             # write generated timeseries
-            ds.to_netcdf(tseries_path, unlimited_dims=time_name, encoding={'region':{'dtype':'S1'}})
+            ds.to_netcdf(tseries_path, encoding={'region':{'dtype':'S1'}})
             # remove genlock file, indicating that tseries_path has been generated
             os.remove(tseries_path_genlock)
         # wait until genlock file doesn't exists, in case it was being generated or written
@@ -236,6 +236,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
         ds_in.chunk(chunks={time_name: time_chunksize})
         time_encoding = ds_in[time_name].encoding
         var_encoding = ds_in[varname].encoding
+        ds_encoding = ds_in.encoding
 
     # instantiate cluster, if not provided via argument
     cluster = ncar_jobqueue.NCARCluster() if cluster_in is None else cluster_in
@@ -336,6 +337,10 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
             ds_out.attrs['history'] = 'created by %s at %s' % (__file__, datestamp)
 
             ds_out.attrs['input_file_list'] = ' '.join(fnames)
+
+            for key in ['unlimited_dims']:
+                if key in ds_encoding:
+                    ds_out.encoding[key] = ds_encoding[key]
 
     # if cluster was instantiated here, close it
     if cluster_in is None:

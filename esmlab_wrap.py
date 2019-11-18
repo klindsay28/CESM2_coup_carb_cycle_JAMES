@@ -15,6 +15,10 @@ def compute_ann_mean(ds):
     if ds_ann[tb_name].dims[0] != 'time':
         ds_ann[tb_name] = ds_ann[tb_name].transpose()
 
+    for key in ['unlimited_dims']:
+        if key in ds.encoding:
+            ds_ann.encoding[key] = ds.encoding[key]
+
     return ds_ann
 
 def compute_mon_anomaly(ds):
