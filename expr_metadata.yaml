@@ -3,192 +3,192 @@ experiments:
     data_sources:
         piControl:
             - case: b.e21.B1850.f09_g17.CMIP6-piControl.001
-              ctrl_experiment: None
-              ctrl_branch_year: 1
+              parent_experiment: None
+              parent_branch_year: 1
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1850.f09_g17.CMIP6-piControl.001
         abrupt-4xCO2:
             - case: b.e21.BCO2x4cmip6.f09_g17.CMIP6-abrupt4xCO2.001
-              ctrl_experiment: piControl
-              ctrl_branch_year: 501
+              parent_experiment: piControl
+              parent_branch_year: 501
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BCO2x4cmip6.f09_g17.CMIP6-abrupt4xCO2.001
         1pctCO2:
             - case: b.e21.B1PCT.f09_g17.CMIP6-1pctCO2.001
-              ctrl_experiment: piControl
-              ctrl_branch_year: 501
+              parent_experiment: piControl
+              parent_branch_year: 501
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1PCT.f09_g17.CMIP6-1pctCO2.001
         1pctCO2-bgc:
             - case: b.e21.B1PCT.f09_g17.CMIP6-1pctCO2-bgc.001
-              ctrl_experiment: piControl
-              ctrl_branch_year: 501
+              parent_experiment: piControl
+              parent_branch_year: 501
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1PCT.f09_g17.CMIP6-1pctCO2-bgc.001
         1pctCO2-rad:
             - case: b.e21.B1PCT.f09_g17.CMIP6-1pctCO2-rad.001
-              ctrl_experiment: piControl
-              ctrl_branch_year: 501
+              parent_experiment: piControl
+              parent_branch_year: 501
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1PCT.f09_g17.CMIP6-1pctCO2-rad.001
         historical:
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.001
-              ctrl_experiment: piControl
-              ctrl_branch_year: 601
+              parent_experiment: piControl
+              parent_branch_year: 601
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.001
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.002
-              ctrl_experiment: piControl
-              ctrl_branch_year: 631
+              parent_experiment: piControl
+              parent_branch_year: 631
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.002
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.003
-              ctrl_experiment: piControl
-              ctrl_branch_year: 661
+              parent_experiment: piControl
+              parent_branch_year: 661
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.003
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.004
-              ctrl_experiment: piControl
-              ctrl_branch_year: 501
+              parent_experiment: piControl
+              parent_branch_year: 501
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.004
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.005
-              ctrl_experiment: piControl
-              ctrl_branch_year: 691
+              parent_experiment: piControl
+              parent_branch_year: 691
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.005
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.006
-              ctrl_experiment: piControl
-              ctrl_branch_year: 721
+              parent_experiment: piControl
+              parent_branch_year: 721
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.006
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.007
-              ctrl_experiment: piControl
-              ctrl_branch_year: 751
+              parent_experiment: piControl
+              parent_branch_year: 751
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.007
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.008
-              ctrl_experiment: piControl
-              ctrl_branch_year: 781
+              parent_experiment: piControl
+              parent_branch_year: 781
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.008
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.009
-              ctrl_experiment: piControl
-              ctrl_branch_year: 811
+              parent_experiment: piControl
+              parent_branch_year: 811
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.009
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.010
-              ctrl_experiment: piControl
-              ctrl_branch_year: 841
+              parent_experiment: piControl
+              parent_branch_year: 841
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.010
             - case: b.e21.BHIST.f09_g17.CMIP6-historical.011
-              ctrl_experiment: piControl
-              ctrl_branch_year: 871
+              parent_experiment: piControl
+              parent_branch_year: 871
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST.f09_g17.CMIP6-historical.011
         ssp585:
             - case: b.e21.BSSP585cmip6.f09_g17.CMIP6-SSP5-8.5.001
-              ctrl_experiment: historical
-              ctrl_branch_year: 2015
+              parent_experiment: historical
+              parent_branch_year: 2015
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BSSP585cmip6.f09_g17.CMIP6-SSP5-8.5.001
             - case: b.e21.BSSP585cmip6.f09_g17.CMIP6-SSP5-8.5.002
-              ctrl_experiment: historical
-              ctrl_branch_year: 2015
+              parent_experiment: historical
+              parent_branch_year: 2015
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BSSP585cmip6.f09_g17.CMIP6-SSP5-8.5.002
 
         piControl-icealb:
             - case: b.e21.B1850.f09_g17.CMIP6-piControl.001_branch2
-              ctrl_experiment: piControl
-              ctrl_branch_year: 811
+              parent_experiment: piControl
+              parent_branch_year: 811
               root_dir: /glade/p/cgd/ppc/dbailey/archive/b.e21.B1850.f09_g17.CMIP6-piControl.001_branch2
               exclude_dirs: ['*/hist', 'rest/*', '*/diag', 'climo/*', '*/climo/*']
 
         piControl-waccm:
             - case: b.e21.BW1850.f09_g17.CMIP6-piControl.001
-              ctrl_experiment: None
-              ctrl_branch_year: 1
+              parent_experiment: None
+              parent_branch_year: 1
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BW1850.f09_g17.CMIP6-piControl.001
         historical-waccm:
             - case: b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.001
-              ctrl_experiment: piControl-waccm
-              ctrl_branch_year: 56
+              parent_experiment: piControl-waccm
+              parent_branch_year: 56
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.001
             - case: b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.002
-              ctrl_experiment: piControl-waccm
-              ctrl_branch_year: 61
+              parent_experiment: piControl-waccm
+              parent_branch_year: 61
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.002
             - case: b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.003
-              ctrl_experiment: piControl-waccm
-              ctrl_branch_year: 70
+              parent_experiment: piControl-waccm
+              parent_branch_year: 70
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.003
         ssp585-waccm:
             - case: b.e21.BWSSP585cmip6.f09_g17.CMIP6-SSP5-8.5-WACCM.001
-              ctrl_experiment: historical-waccm
-              ctrl_branch_year: 2015
+              parent_experiment: historical-waccm
+              parent_branch_year: 2015
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWSSP585cmip6.f09_g17.CMIP6-SSP5-8.5-WACCM.001
 
         piControl-2deg:
             - case: b.e21.B1850.f19_g17.CMIP6-piControl-2deg.001
-              ctrl_experiment: None
-              ctrl_branch_year: 1
+              parent_experiment: None
+              parent_branch_year: 1
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1850.f19_g17.CMIP6-piControl-2deg.001
               exclude_dirs: ['*/hist', 'rest/*', '*/h0gm', '*/h0gam', '*/tmpdir', '*/h0zm']
 
         esm-piControl:
             - case: b.e21.B1850.f09_g17.CMIP6-esm-piControl.001
-              ctrl_experiment: piControl
-              ctrl_branch_year: 501
+              parent_experiment: piControl
+              parent_branch_year: 501
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1850.f09_g17.CMIP6-esm-piControl.001
         esm-hist:
             - case: b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.001
-              ctrl_experiment: esm-piControl
-              ctrl_branch_year: 51
+              parent_experiment: esm-piControl
+              parent_branch_year: 51
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.001
             - case: b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.002
-              ctrl_experiment: esm-piControl
-              ctrl_branch_year: 151
+              parent_experiment: esm-piControl
+              parent_branch_year: 151
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.002
 
         coreII:
             - case: g.e21.GOMIPECOIAF.T62_g17.CMIP6-omip1.002
-              ctrl_experiment: None
-              ctrl_branch_year: 1
+              parent_experiment: None
+              parent_branch_year: 1
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/g.e21.GOMIPECOIAF.T62_g17.CMIP6-omip1.002
               exclude_dirs: ['*/hist', 'rest/*']
         JRA:
             - case: g.e21.GOMIPECOIAF_JRA.TL319_g17.CMIP6-omip2.001
-              ctrl_experiment: None
-              ctrl_branch_year: 1
+              parent_experiment: None
+              parent_branch_year: 1
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/g.e21.GOMIPECOIAF_JRA.TL319_g17.CMIP6-omip2.001
               exclude_dirs: ['*/hist', 'rest/*']
 
         piControl-cmip5:
             - case: b40.prescribed_carb.001
-              ctrl_experiment: None
-              ctrl_branch_year: 1
+              parent_experiment: None
+              parent_branch_year: 1
               root_dir: /glade/scratch/klindsay/archive/b40.prescribed_carb.001
         1pctCO2-cmip5:
             - case: b40.1850_ramp.1deg.ncbdrd.001
-              ctrl_experiment: piControl-cmip5
-              ctrl_branch_year: 151
+              parent_experiment: piControl-cmip5
+              parent_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbdrd.001
         1pctCO2-bgc-cmip5:
             - case: b40.1850_ramp.1deg.ncbdrc.001
-              ctrl_experiment: piControl-cmip5
-              ctrl_branch_year: 151
+              parent_experiment: piControl-cmip5
+              parent_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbdrc.001
         1pctCO2-rad-cmip5:
             - case: b40.1850_ramp.1deg.ncbcrd.002
-              ctrl_experiment: piControl-cmip5
-              ctrl_branch_year: 151
+              parent_experiment: piControl-cmip5
+              parent_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbcrd.002
         historical-cmip5:
             - case: b40.20th.1deg.bdrd.001
-              ctrl_experiment: piControl-cmip5
-              ctrl_branch_year: 151
+              parent_experiment: piControl-cmip5
+              parent_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.bdrd.001
         rcp85-cmip5:
             - case: b40.rcp8_5.1deg.bdrd.001
-              ctrl_experiment: historical-cmip5
-              ctrl_branch_year: 2005
+              parent_experiment: historical-cmip5
+              parent_branch_year: 2005
               root_dir: /glade/scratch/klindsay/archive/b40.rcp8_5.1deg.bdrd.001
         esm-piControl-cmip5:
             - case: b40.coup_carb.004
-              ctrl_experiment: None
-              ctrl_branch_year: 1
+              parent_experiment: None
+              parent_branch_year: 1
               root_dir: /glade/scratch/klindsay/archive/b40.coup_carb.004
         esm-hist-cmip5:
             - case: b40.20th.1deg.coup.001
-              ctrl_experiment: esm-piControl-cmip5
-              ctrl_branch_year: 351
+              parent_experiment: esm-piControl-cmip5
+              parent_branch_year: 351
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.coup.001
         esm-rcp85-cmip5:
             - case: b40.rcp8_5.1deg.bprp.002
-              ctrl_experiment: esm-hist-cmip5
-              ctrl_branch_year: 2005
+              parent_experiment: esm-hist-cmip5
+              parent_branch_year: 2005
               root_dir: /glade/scratch/klindsay/archive/b40.rcp8_5.1deg.bprp.002

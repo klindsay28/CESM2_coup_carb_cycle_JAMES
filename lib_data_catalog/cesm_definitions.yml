@@ -6,8 +6,8 @@ catalog_columns:
   - date_range
   - case
   - ensemble
-  - ctrl_experiment
-  - ctrl_branch_year
+  - parent_experiment
+  - parent_branch_year
   - year_offset
   - sequence_order
   - has_ocean_bgc
