@@ -202,7 +202,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
     generate a tseries for a particular ensemble member, return a Dataset object
     assumes that data_catalog.set_catalog has been called
     """
-    print('entering _tseries_gen for %s' % varname)
+    print(f'entering _tseries_gen for {varname}')
     varname_resolved = _varname_resolved(varname, component)
     fnames = data_catalog.get_files(
         variable=varname_resolved, component=component,
@@ -267,7 +267,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
 
             var_units = clean_units(da_in.attrs['units'])
             if 'unit_conv' in var_spec:
-                var_units = '(%s)(%s)' % (str(var_spec['unit_conv']), var_units)
+                var_units = f'({var_spec["unit_conv"]})({var_units})'
 
             # construct averaging/integrating weight
             weight = get_weight(ds_in, component, reduce_dims)
@@ -285,7 +285,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
                 da_out = (da_in * weight).sum(dim=reduce_dims)
                 da_out.name = varname
                 da_out.attrs['long_name'] = 'Integrated '+da_in.attrs['long_name']
-                da_out.attrs['units']=cf_units.Unit('(%s)(%s)' % (weight.attrs['units'], var_units)).format()
+                da_out.attrs['units']=cf_units.Unit(f'({weight.attrs["units"]})({var_units})').format()
             elif tseries_op == 'average':
                 da_out = (da_in * weight).sum(dim=reduce_dims)
                 ones_masked = xr.ones_like(da_in).where(da_in.notnull())
@@ -295,7 +295,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
                 da_out.attrs['long_name'] = 'Averaged '+da_in.attrs['long_name']
                 da_out.attrs['units']=cf_units.Unit(var_units).format()
             else:
-                msg = 'tseries_op==%s not implemented' % tseries_op
+                msg = f'tseries_op={tseries_op} not implemented'
                 raise NotImplementedError(msg)
 
             # force the computation to occur
@@ -334,7 +334,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
             ds_out.attrs = ds_in.attrs
 
             datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
-            ds_out.attrs['history'] = 'created by %s at %s' % (__file__, datestamp)
+            ds_out.attrs['history'] = f'created by {__file__} at {datestamp}'
 
             ds_out.attrs['input_file_list'] = ' '.join(fnames)
 
@@ -368,7 +368,7 @@ def get_weight(ds, component, reduce_dims):
         if 'z_t' in reduce_dims or 'z_t_150m' in reduce_dims:
             return get_volume(ds, component)
         return get_area(ds, component)
-    msg = 'unrecognized component=%s' % component
+    msg = f'unknown component={component}'
     raise ValueError(msg)
 
 def get_area(ds, component):
@@ -396,7 +396,7 @@ def get_area(ds, component):
         area = (area_earth / area.sum(dim=('lat', 'lon'))) * area
         area.attrs['units'] = 'm2'
         return area
-    msg = 'unknown component %s' % component
+    msg = f'unknown component={component}'
     raise ValueError(msg)
 
 def get_volume(ds, component):
@@ -408,7 +408,7 @@ def get_volume(ds, component):
         volume.attrs['units'] = 'cm3'
         return volume
 
-    msg = 'get_volume not implemented for %s' % component
+    msg = f'component={component} not implemented'
     raise NotImplementedError(msg)
 
 def get_rmask(ds, component):
@@ -440,7 +440,7 @@ def get_rmask(ds, component):
         lateral_dims = ('lat', 'lon')
         rmask_od['Global'] = xr.where((ds['lat'] > -100.0) & (ds['lon'] > -400.0), 1.0, 0.0)
     if len(rmask_od) == 0:
-        msg = 'unknown component %s' % component
+        msg = f'unknown component={component}'
         raise ValueError(msg)
 
     rmask = xr.DataArray(np.zeros((len(rmask_od), ds.dims[lateral_dims[0]], ds.dims[lateral_dims[1]])),
@@ -459,7 +459,7 @@ def get_rmask(ds, component):
 
 def tseries_fname(varname, component, experiment, ensemble):
     """return relative filename for tseries"""
-    return '%s_%s_%s_%02d.nc' % (varname, component, experiment, ensemble)
+    return f'{varname}_{component}_{experiment}_{ensemble:02d}.nc'
 
 def tseries_copy_var_names(component):
     """return component specific list of vars to copy into generated tseries files"""
