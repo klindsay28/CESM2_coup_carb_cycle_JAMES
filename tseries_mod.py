@@ -80,7 +80,7 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=None, c
                 os.remove(tseries_path_genlock)
                 raise
             # write generated timeseries
-            ds.to_netcdf(tseries_path, encoding={'region':{'dtype':'S1'}})
+            ds.to_netcdf(tseries_path)
             # remove genlock file, indicating that tseries_path has been generated
             os.remove(tseries_path_genlock)
         # wait until genlock file doesn't exists, in case it was being generated or written
@@ -446,6 +446,7 @@ def get_rmask(ds, component):
     rmask = xr.DataArray(np.zeros((len(rmask_od), ds.dims[lateral_dims[0]], ds.dims[lateral_dims[1]])),
                          dims=('region', lateral_dims[0], lateral_dims[1]),
                          coords={'region':list(rmask_od.keys())})
+    rmask.region.encoding['dtype'] = 'S1'
 
     # add coordinates if appropriate
     if component == 'atm' or component == 'lnd':
