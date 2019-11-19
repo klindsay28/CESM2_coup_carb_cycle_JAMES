@@ -31,15 +31,19 @@ def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None,
     """
     if clobber is None:
         clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
+
     cluster = ncar_jobqueue.NCARCluster() if cluster_in is None and clobber else cluster_in
+
     for varind, varname in enumerate(varnames):
         ds_tmp = tseries_get_var(varname, component, experiment, stream, clobber, cluster)
         if varind == 0:
             ds = ds_tmp
         else:
             ds[varname] = ds_tmp[varname]
+
     if cluster_in is None and clobber:
         cluster.close()
+
     return ds
 
 def tseries_get_var(varname, component, experiment, stream=None, clobber=None, cluster_in=None):
@@ -53,41 +57,19 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=None, c
             var_specs = yaml.safe_load(fptr)
         stream = var_specs[component]['stream']
 
+    if clobber is None:
+        clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
+
     # get matching data_catalog entries
     entries = data_catalog.find_in_index(
         variable=_varname_resolved(varname, component), component=component,
         stream=stream, experiment=experiment)
 
-    # if clobber is not specified via argument, check for specification via environment
-    # if not specified via environment, default value is False
-    if clobber is None:
-        clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
-
     # loop over matching ensembles
     paths = []
     for ensemble in entries.ensemble.unique():
-        tseries_path = os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble))
-        tseries_path_genlock = tseries_path + ".genlock"
-        # if file doesn't exists and isn't being generated, generate it
-        if clobber or (not os.path.exists(tseries_path) and not os.path.exists(tseries_path_genlock)):
-            # create genlock file, indicating that tseries_path is being generated
-            open(tseries_path_genlock, mode='w').close()
-            # generate timeseries
-            try:
-                ds = _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in)
-            except:
-                # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
-                os.remove(tseries_path_genlock)
-                raise
-            # write generated timeseries
-            ds.to_netcdf(tseries_path)
-            # remove genlock file, indicating that tseries_path has been generated
-            os.remove(tseries_path_genlock)
-        # wait until genlock file doesn't exists, in case it was being generated or written
-        while os.path.exists(tseries_path_genlock):
-            print('genlock file exists, waiting')
-            time.sleep(5)
-        paths.append(tseries_path)
+        path = _tseries_gen_wrap(varname, component, experiment, ensemble, stream, clobber, cluster_in)
+        paths.append(path)
 
     # if there are multiple ensembles, concatenate over ensembles
     decode_times = True
@@ -196,6 +178,37 @@ def _varname_resolved(varname, component):
     var_spec = var_specs_all[component]['vars'][varname]
     
     return var_spec['varname'] if 'varname' in var_spec else varname
+
+def _tseries_gen_wrap(varname, component, experiment, ensemble, stream, clobber, cluster_in=None):
+    """
+    return path for file containing tseries for varname for a single ensemble member
+        creating the file if necessary
+    assumes that data_catalog.set_catalog has been called
+    """
+    tseries_path = os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble))
+    tseries_path_genlock = tseries_path + ".genlock"
+    # if file doesn't exists and isn't being generated, generate it
+    if clobber or (not os.path.exists(tseries_path) and not os.path.exists(tseries_path_genlock)):
+        # create genlock file, indicating that tseries_path is being generated
+        open(tseries_path_genlock, mode='w').close()
+        # generate timeseries
+        try:
+            ds = _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in)
+        except:
+            # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
+            os.remove(tseries_path_genlock)
+            raise
+        # write generated timeseries
+        ds.to_netcdf(tseries_path)
+        # remove genlock file, indicating that tseries_path has been generated
+        os.remove(tseries_path_genlock)
+
+    # wait until genlock file doesn't exists, in case it was being generated or written
+    while os.path.exists(tseries_path_genlock):
+        print('genlock file exists, waiting')
+        time.sleep(5)
+
+    return tseries_path
 
 def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
     """
