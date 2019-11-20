@@ -4,6 +4,8 @@ wrappers to esmlab functionality
 using these wrappers eases adapting to API changes in esmlab
 """
 
+from datetime import datetime, timezone
+
 import esmlab
 
 def compute_ann_mean(ds):
@@ -18,6 +20,14 @@ def compute_ann_mean(ds):
     for key in ['unlimited_dims']:
         if key in ds.encoding:
             ds_ann.encoding[key] = ds.encoding[key]
+
+    for key in ds.attrs:
+        if key in ['history']:
+            datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
+            msg = f'{datestamp}: created by esmlab.resample'
+            ds_ann.attrs[key] = '\n'.join([msg, ds.attrs[key]])
+        else:
+            ds_ann.attrs[key] = ds.attrs[key]
 
     return ds_ann
 

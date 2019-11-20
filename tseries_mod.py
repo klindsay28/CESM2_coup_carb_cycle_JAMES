@@ -17,12 +17,13 @@ import dask
 import ncar_jobqueue
 
 import data_catalog
+import esmlab_wrap
 from utils import clean_units, copy_fill_settings, dim_cnt_check, time_set_mid, time_year_plus_frac
 
 var_specs_fname = 'var_specs.yaml'
 time_name = 'time'
 
-def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None, cluster_in=None):
+def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', clobber=None, cluster_in=None):
     """
     return tseries for varnames, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -35,7 +36,7 @@ def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None,
     cluster = ncar_jobqueue.NCARCluster() if cluster_in is None and clobber else cluster_in
 
     for varind, varname in enumerate(varnames):
-        ds_tmp = tseries_get_var(varname, component, experiment, stream, clobber, cluster)
+        ds_tmp = tseries_get_var(varname, component, experiment, stream, freq, clobber, cluster)
         if varind == 0:
             ds = ds_tmp
         else:
@@ -46,7 +47,7 @@ def tseries_get_vars(varnames, component, experiment, stream=None, clobber=None,
 
     return ds
 
-def tseries_get_var(varname, component, experiment, stream=None, clobber=None, cluster_in=None):
+def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clobber=None, cluster_in=None):
     """
     return tseries for varname, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -68,7 +69,7 @@ def tseries_get_var(varname, component, experiment, stream=None, clobber=None, c
     # loop over matching ensembles
     paths = []
     for ensemble in entries.ensemble.unique():
-        path = _tseries_gen_wrap(varname, component, experiment, ensemble, stream, clobber, cluster_in)
+        path = _tseries_gen_wrap(varname, component, experiment, ensemble, stream, freq, clobber, cluster_in)
         paths.append(path)
 
     # if there are multiple ensembles, concatenate over ensembles
@@ -179,13 +180,17 @@ def _varname_resolved(varname, component):
     
     return var_spec['varname'] if 'varname' in var_spec else varname
 
-def _tseries_gen_wrap(varname, component, experiment, ensemble, stream, clobber, cluster_in=None):
+def _tseries_gen_wrap(varname, component, experiment, ensemble, stream, freq, clobber, cluster_in=None):
     """
     return path for file containing tseries for varname for a single ensemble member
         creating the file if necessary
     assumes that data_catalog.set_catalog has been called
     """
-    tseries_path = os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble))
+    if freq not in ['mon', 'ann']:
+        msg = f'freq={freq} not implemented'
+        raise NotImplementedError(msg)
+
+    tseries_path = os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble, freq))
     tseries_path_genlock = tseries_path + ".genlock"
     # if file doesn't exists and isn't being generated, generate it
     if clobber or (not os.path.exists(tseries_path) and not os.path.exists(tseries_path_genlock)):
@@ -193,13 +198,19 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, stream, clobber,
         open(tseries_path_genlock, mode='w').close()
         # generate timeseries
         try:
-            ds = _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in)
+            if freq == 'mon':
+                ds = _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in)
+            if freq == 'ann':
+                freq_tmp = 'mon'
+                mon_path = _tseries_gen_wrap(varname, component, experiment,
+                                             ensemble, stream, freq_tmp, clobber, cluster_in)
+                ds = esmlab_wrap.compute_ann_mean(xr.open_dataset(mon_path))
         except:
             # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
             os.remove(tseries_path_genlock)
             raise
         # write generated timeseries
-        ds.to_netcdf(tseries_path)
+        ds.to_netcdf(tseries_path, format='NETCDF3_64BIT')
         # remove genlock file, indicating that tseries_path has been generated
         os.remove(tseries_path_genlock)
 
@@ -347,7 +358,11 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
             ds_out.attrs = ds_in.attrs
 
             datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
-            ds_out.attrs['history'] = f'created by {__file__} at {datestamp}'
+            msg = f'{datestamp}: created by {__file__}'
+            if 'history' in ds_out.attrs:
+                ds_out.attrs['history'] = '\n'.join([msg, ds_out.attrs['history']])
+            else:
+                ds_out.attrs['history'] = msg
 
             ds_out.attrs['input_file_list'] = ' '.join(fnames)
 
@@ -471,9 +486,9 @@ def get_rmask(ds, component):
 
     return rmask
 
-def tseries_fname(varname, component, experiment, ensemble):
+def tseries_fname(varname, component, experiment, ensemble, freq):
     """return relative filename for tseries"""
-    return f'{varname}_{component}_{experiment}_{ensemble:02d}.nc'
+    return f'{varname}_{component}_{experiment}_{ensemble:02d}_{freq}.nc'
 
 def tseries_copy_var_names(component):
     """return component specific list of vars to copy into generated tseries files"""
