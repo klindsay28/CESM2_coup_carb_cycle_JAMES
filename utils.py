@@ -3,6 +3,7 @@
 import re
 
 import cftime
+import cf_units
 import numpy as np
 
 from xr_ds_ex import xr_ds_ex
@@ -17,6 +18,14 @@ def clean_units(units):
     units_split_repl = \
         [replacements[token] if token in replacements else token for token in units_split]
     return ''.join(units_split_repl)
+
+def conv_units(da, units_out):
+    """
+    convert units of da to units_out inplace
+    return modified da
+    """
+    da.values = cf_units.Unit(da.attrs['units']).convert(da.values, cf_units.Unit(clean_units(units_out)))
+    da.attrs['units'] = units_out
 
 def copy_fill_settings(da_in, da_out):
     """

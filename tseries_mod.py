@@ -259,7 +259,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
         time_chunksize = 12 if rank < 4 else 1
         ds_in.chunk(chunks={time_name: time_chunksize})
         time_encoding = ds_in[time_name].encoding
-        var_encoding = ds_in[varname].encoding
+        var_encoding = ds_in[varname_resolved].encoding
         ds_encoding = ds_in.encoding
 
     # instantiate cluster, if not provided via argument
@@ -322,9 +322,6 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
                 msg = f'tseries_op={tseries_op} not implemented'
                 raise NotImplementedError(msg)
 
-            # force the computation to occur
-            da_out.load()
-
             # propagate some settings from da_in to da_out
             da_out.encoding['dtype'] = da_in.encoding['dtype']
             copy_fill_settings(da_in, da_out)
@@ -370,11 +367,14 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
                 if key in ds_encoding:
                     ds_out.encoding[key] = ds_encoding[key]
 
+            # force computation of ds_out, while resources of client are still available
+            ds_out.load()
+
     # if cluster was instantiated here, close it
     if cluster_in is None:
         cluster.close()
 
-    return ds_out.load()
+    return ds_out
 
 def test_open_mfdataset(paths, time_chunksize):
     for ind in range(len(paths)-1):
@@ -463,6 +463,9 @@ def get_rmask(ds, component):
         dim_cnt_check(ds, 'landfrac', 2)
         lateral_dims = ds['landfrac'].dims
         rmask_od['Global'] = xr.where(ds['landfrac'] > 0, 1.0, 0.0)
+#         rmask_od['CentralAfrica'] = xr.where((ds['landfrac'] > 0)
+#                                              & (ds['lat'] >= -5.0) & (ds['lat'] < 5.0)
+#                                              & (ds['lon'] >= 0.0) & (ds['lon'] < 30.0), 1.0, 0.0)
     if component == 'atm':
         dim_cnt_check(ds, 'gw', 1)
         lateral_dims = ('lat', 'lon')
@@ -493,5 +496,5 @@ def tseries_fname(varname, component, experiment, ensemble, freq):
 def tseries_copy_var_names(component):
     """return component specific list of vars to copy into generated tseries files"""
     if component == 'atm':
-        return ['co2vmr', 'ch4vmr', 'f11vmr', 'f12vmr', 'n2ovmr', 'sol_tsi']
+        return ['P0', 'hyai', 'hyam', 'hybi', 'hybm', 'co2vmr', 'ch4vmr', 'f11vmr', 'f12vmr', 'n2ovmr', 'sol_tsi']
     return []

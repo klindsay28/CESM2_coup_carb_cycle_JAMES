@@ -119,10 +119,16 @@ experiments:
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1850.f19_g17.CMIP6-piControl-2deg.001
               exclude_dirs: ['*/hist', 'rest/*', '*/h0gm', '*/h0gam', '*/tmpdir', '*/h0zm']
 
+        esm-piControl-pre:
+            - case: b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.004
+              parent_experiment: piControl
+              parent_branch_year: 581
+              root_dir: /glade/campaign/cesm/development/bgcwg/projects/CMIP6-related/b.e21.B1850_BPRP.f09_g17.CMIP6-piControl.tst.004
+              exclude_dirs: ['*/hist', 'rest/*']
         esm-piControl:
             - case: b.e21.B1850.f09_g17.CMIP6-esm-piControl.001
               parent_experiment: piControl
-              parent_branch_year: 501
+              parent_branch_year: 581
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1850.f09_g17.CMIP6-esm-piControl.001
         esm-hist:
             - case: b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.001
