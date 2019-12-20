@@ -1,4 +1,4 @@
-"""interface for extracting and plotting timeseries from CESM output"""
+"""interface for extracting timeseries from CESM output"""
 
 from collections import OrderedDict
 from datetime import datetime, timezone
@@ -8,7 +8,6 @@ import time
 import warnings
 
 import cf_units
-import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import yaml
@@ -19,7 +18,7 @@ import ncar_jobqueue
 
 import data_catalog
 import esmlab_wrap
-from utils import is_date, copy_fill_settings, dim_cnt_check, time_set_mid, time_year_plus_frac
+from utils import copy_fill_settings, dim_cnt_check, time_set_mid
 from utils_units import clean_units, conv_units
 
 var_specs_fname = 'var_specs.yaml'
@@ -103,7 +102,7 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
         ds = xr.open_mfdataset(paths, decode_times=decode_times,
                                combine='nested', concat_dim='ensemble', data_vars=[varname])
         # force ensemble dimension to be last dimension
-        # this make plotting in tseries_plot_1ds below more straightforward
+        # this make plotting more straightforward
         tb_name = ds.time.attrs['bounds']
         dims = list(ds[tb_name].dims)
         for dim in ds.dims:
@@ -115,100 +114,6 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
         ds = xr.open_dataset(paths[0], decode_times=decode_times)
 
     return ds
-
-def tseries_plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
-    """
-    create a simple plot of a tseries variable for multiple datasets
-    use units from last tseries variable for ylabel
-    """
-    fig, ax = plt.subplots(figsize=figsize)
-    for ds_ind, ds in enumerate(ds_list):
-        varname_x = ds[varname].dims[0]
-        da_x = ds[varname_x]
-        if is_date(da_x):
-            xvals = time_year_plus_frac(ds, varname_x)
-            xlabel = 'time (years)'
-        else:
-            xvals = da_x.values
-            xlabel = f'{varname_x} ({da_x.attrs["units"]})' if 'units' in da_x.attrs else varname_x
-        seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
-        ax.plot(xvals, ds[varname].sel(seldict), label=legend_list[ds_ind])
-    ax.set_xlabel(xlabel)
-    if ds[varname].attrs['units'] != '1':
-        ax.set_ylabel(ds[varname].attrs['units'])
-    ax.legend()
-    if title is not None:
-        ax.set_title(title)
-    if fname is not None:
-        plt.savefig(fname, dpi=600)
-
-def tseries_plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
-    """
-    create a simple plot of a list of tseries variables
-    use units from last tseries variable for ylabel
-    """
-    fig, ax = plt.subplots(figsize=figsize)
-    t = time_year_plus_frac(ds, time_name)
-    seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
-    for varname in varnames:
-        varname_x = ds[varname].dims[0]
-        da_x = ds[varname_x]
-        if is_date(da_x):
-            xvals = time_year_plus_frac(ds, varname_x)
-            xlabel = 'time (years)'
-        else:
-            xvals = da_x.values
-            xlabel = f'{varname_x} ({da_x.attrs["units"]})' if 'units' in da_x.attrs else varname_x
-        if region_val is None:
-            ax.plot(xvals, ds[varname], label=varname)
-        else:
-            ax.plot(xvals, ds[varname].sel(seldict), label=varname)
-    ax.set_xlabel(xlabel)
-    if ds[varname].attrs['units'] != '1':
-        ax.set_ylabel(ds[varname].attrs['units'])
-    ax.legend()
-    if title is not None:
-        ax.set_title(title)
-    if fname is not None:
-        plt.savefig(fname, dpi=600)
-
-def tseries_plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), region_val=None, fname=None):
-    """
-    create a simple plot of a list of tseries variables vs a single tseries variable
-    use units from last tseries variable for ylabel
-    """
-    fig, ax = plt.subplots(figsize=figsize)
-    for varname_y in varnames_y:
-        if region_val is None:
-            ax.plot(ds[varname_x], ds[varname_y], label=varname_y)
-        else:
-            ax.plot(ds[varname_x], ds[varname_y].sel(region=region_val), label=varname_y)
-    ax.set_xlabel(varname_x + '(' + ds[varname_x].attrs['units'] + ')')
-    if ds[varname].attrs['units'] != '1':
-        ax.set_ylabel(ds[varname_y].attrs['units'])
-    ax.legend()
-    if title is not None:
-        ax.set_title(title)
-    if fname is not None:
-        plt.savefig(fname, dpi=600)
-
-def _seldict(ds, region_val, vdim_name, vdim_ind):
-    """
-    return dictionary of dimensions and indices
-    to be used in sel operator
-    """
-
-    seldict = {}
-    if region_val is not None:
-        seldict['region'] = region_val
-    if vdim_name is not None:
-        if vdim_ind is None:
-            vdim_ind_loc = -1 if vdim_name == 'lev' else 0
-        else:
-            vdim_ind_loc = vdim_ind
-        seldict[vdim_name] = ds[vdim_name].values[vdim_ind_loc]
-
-    return seldict
 
 def _varnames_resolved(varnames, component):
     """resolve varnames to underlying varname that appears in files"""
