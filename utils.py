@@ -155,10 +155,12 @@ def da_w_lags(da, max_lag=30):
     """
     return da with added lag dimension
     lagging is done along da's leading dimension
+    positive lag shifts to the left
+        e.g., if dimension is time, positive lag samples the future
     """
     dimname = da.dims[0]
     lags = np.arange(-max_lag, max_lag+1)
     da_out = da.expand_dims(dim={'lag': lags}).copy()
     for lag_ind, lag in enumerate(lags):
-        da_out.values[lag_ind,:] = da.shift({dimname: lag}).values
+        da_out.values[lag_ind,:] = da.shift({dimname: -lag}).values
     return da_out
