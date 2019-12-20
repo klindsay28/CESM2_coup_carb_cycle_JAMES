@@ -9,8 +9,8 @@ for case in b40.prescribed_carb.001 \
    mkdir -p /glade/scratch/klindsay/archive/$case/ocn/proc/tseries/monthly
    cd /glade/scratch/klindsay/archive/$case/ocn/proc/tseries/monthly
 
-   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; ls *.DIC.* *.DOC.*"
-   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; cget *.DIC.* *.DOC.*"
+   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; ls *.DIC.* *.DOC.* *.TEMP.*"
+   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; cget *.DIC.* *.DOC.* *.TEMP.*"
 
 done
 
@@ -26,7 +26,7 @@ for case in b40.prescribed_carb.001 \
    mkdir -p /glade/scratch/klindsay/archive/$case/ocn/proc/tseries/monthly
    cd /glade/scratch/klindsay/archive/$case/ocn/proc/tseries/monthly
 
-   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; ls *.FG_CO2.* *.FvPER_DIC.* *.FvICE_DIC.*"
-   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; cget *.FG_CO2.* *.FvPER_DIC.* *.FvICE_DIC.*"
+   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; ls *.FG_CO2.* *.FvPER_DIC.* *.FvICE_DIC.* *.photoC*"
+   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; cget *.FG_CO2.* *.FvPER_DIC.* *.FvICE_DIC.* *.photoC*"
 
 done
