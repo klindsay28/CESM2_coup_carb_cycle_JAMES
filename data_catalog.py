@@ -110,7 +110,7 @@ def _extract_cesm_date_str(filename):
     # should it also return a freq?
     datestrs = [r'\d{12}Z-\d{12}Z',
                 r'\d{10}Z-\d{10}Z',
-                r'\d{10}-\d{10}',                
+                r'\d{10}-\d{10}',
                 r'\d{8}-\d{8}',
                 r'\d{6}-\d{6}',
                 r'\d{4}-\d{4}',

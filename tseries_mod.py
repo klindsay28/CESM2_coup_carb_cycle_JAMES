@@ -1,10 +1,11 @@
 """interface for extracting and plotting timeseries from CESM output"""
 
+from collections import OrderedDict
 from datetime import datetime, timezone
 import math
 import os
 import time
-from collections import OrderedDict
+import warnings
 
 import cf_units
 import matplotlib.pyplot as plt
@@ -18,7 +19,8 @@ import ncar_jobqueue
 
 import data_catalog
 import esmlab_wrap
-from utils import clean_units, copy_fill_settings, dim_cnt_check, time_set_mid, time_year_plus_frac
+from utils import is_date, copy_fill_settings, dim_cnt_check, time_set_mid, time_year_plus_frac
+from utils_units import clean_units, conv_units
 
 var_specs_fname = 'var_specs.yaml'
 time_name = 'time'
@@ -30,24 +32,43 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
 
     arguments are passed to tseries_get_var
     """
+    # if no stream is specified, get the default stream for this component
+    if stream is None:
+        with open(var_specs_fname, mode='r') as fptr:
+            var_specs = yaml.safe_load(fptr)
+        stream = var_specs[component]['stream']
+
     if clobber is None:
         clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
 
-    cluster = ncar_jobqueue.NCARCluster() if cluster_in is None and clobber else cluster_in
+    # get matching data_catalog entries
+    entries = data_catalog.find_in_index(
+        variable=_varnames_resolved(varnames, component), component=component,
+        stream=stream, experiment=experiment)
+
+    # instantiate cluster, if not provided via argument
+    # ignore dashboard warnings when instantiating
+    if cluster_in is None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(action='ignore', module='.*dashboard')
+            cluster = ncar_jobqueue.NCARCluster()
+    else:
+        cluster = cluster_in
 
     for varind, varname in enumerate(varnames):
-        ds_tmp = tseries_get_var(varname, component, experiment, stream, freq, clobber, cluster)
+        ds_tmp = tseries_get_var(varname, component, experiment, stream, freq, clobber, entries, cluster)
         if varind == 0:
             ds = ds_tmp
         else:
             ds[varname] = ds_tmp[varname]
 
-    if cluster_in is None and clobber:
+    # if cluster was instantiated here, close it
+    if cluster_in is None:
         cluster.close()
 
     return ds
 
-def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clobber=None, cluster_in=None):
+def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clobber=None, entries_in=None, cluster_in=None):
     """
     return tseries for varname, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -62,14 +83,18 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
         clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
 
     # get matching data_catalog entries
-    entries = data_catalog.find_in_index(
-        variable=_varname_resolved(varname, component), component=component,
-        stream=stream, experiment=experiment)
+    varname_resolved = _varname_resolved(varname, component)
+    if entries_in is None:
+        entries = data_catalog.find_in_index(
+            variable=varname_resolved, component=component,
+            stream=stream, experiment=experiment)
+    else:
+        entries = entries_in.loc[entries_in['variable'] == varname_resolved]
 
     # loop over matching ensembles
     paths = []
     for ensemble in entries.ensemble.unique():
-        path = _tseries_gen_wrap(varname, component, experiment, ensemble, stream, freq, clobber, cluster_in)
+        path = _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, entries, cluster_in)
         paths.append(path)
 
     # if there are multiple ensembles, concatenate over ensembles
@@ -81,7 +106,7 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
         # this make plotting in tseries_plot_1ds below more straightforward
         tb_name = ds.time.attrs['bounds']
         dims = list(ds[tb_name].dims)
-        for dim in ds[varname].dims:
+        for dim in ds.dims:
             if dim != 'ensemble' and dim != 'region' and dim not in dims:
                 dims.append(dim)
         dims.extend(['region', 'ensemble'])
@@ -89,27 +114,35 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
     else:
         ds = xr.open_dataset(paths[0], decode_times=decode_times)
 
-    return ds.load()
+    return ds
 
-def tseries_plot_1var(varname, ds_list, legend_list, title=None, figsize=None, region_val=None, vdim_name=None, vdim_ind=None, fname=None):
+def tseries_plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
     """
     create a simple plot of a tseries variable for multiple datasets
     use units from last tseries variable for ylabel
     """
     fig, ax = plt.subplots(figsize=figsize)
     for ds_ind, ds in enumerate(ds_list):
-        t = time_year_plus_frac(ds, time_name)
+        varname_x = ds[varname].dims[0]
+        da_x = ds[varname_x]
+        if is_date(da_x):
+            xvals = time_year_plus_frac(ds, varname_x)
+            xlabel = 'time (years)'
+        else:
+            xvals = da_x.values
+            xlabel = f'{varname_x} ({da_x.attrs["units"]})' if 'units' in da_x.attrs else varname_x
         seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
-        ax.plot(t, ds[varname].sel(seldict), label=legend_list[ds_ind])
-    ax.set_xlabel('time (years)')
-    ax.set_ylabel(ds[varname].attrs['units'])
+        ax.plot(xvals, ds[varname].sel(seldict), label=legend_list[ds_ind])
+    ax.set_xlabel(xlabel)
+    if ds[varname].attrs['units'] != '1':
+        ax.set_ylabel(ds[varname].attrs['units'])
     ax.legend()
     if title is not None:
         ax.set_title(title)
     if fname is not None:
         plt.savefig(fname, dpi=600)
 
-def tseries_plot_1ds(ds, varnames, title=None, figsize=None, region_val=None, vdim_name=None, vdim_ind=None, fname=None):
+def tseries_plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
     """
     create a simple plot of a list of tseries variables
     use units from last tseries variable for ylabel
@@ -118,19 +151,28 @@ def tseries_plot_1ds(ds, varnames, title=None, figsize=None, region_val=None, vd
     t = time_year_plus_frac(ds, time_name)
     seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
     for varname in varnames:
-        if region_val is None:
-            ax.plot(t, ds[varname], label=varname)
+        varname_x = ds[varname].dims[0]
+        da_x = ds[varname_x]
+        if is_date(da_x):
+            xvals = time_year_plus_frac(ds, varname_x)
+            xlabel = 'time (years)'
         else:
-            ax.plot(t, ds[varname].sel(seldict), label=varname)
-    ax.set_xlabel('time (years)')
-    ax.set_ylabel(ds[varname].attrs['units'])
+            xvals = da_x.values
+            xlabel = f'{varname_x} ({da_x.attrs["units"]})' if 'units' in da_x.attrs else varname_x
+        if region_val is None:
+            ax.plot(xvals, ds[varname], label=varname)
+        else:
+            ax.plot(xvals, ds[varname].sel(seldict), label=varname)
+    ax.set_xlabel(xlabel)
+    if ds[varname].attrs['units'] != '1':
+        ax.set_ylabel(ds[varname].attrs['units'])
     ax.legend()
     if title is not None:
         ax.set_title(title)
     if fname is not None:
         plt.savefig(fname, dpi=600)
 
-def tseries_plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=None, region_val=None, fname=None):
+def tseries_plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), region_val=None, fname=None):
     """
     create a simple plot of a list of tseries variables vs a single tseries variable
     use units from last tseries variable for ylabel
@@ -142,7 +184,8 @@ def tseries_plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=None
         else:
             ax.plot(ds[varname_x], ds[varname_y].sel(region=region_val), label=varname_y)
     ax.set_xlabel(varname_x + '(' + ds[varname_x].attrs['units'] + ')')
-    ax.set_ylabel(ds[varname_y].attrs['units'])
+    if ds[varname].attrs['units'] != '1':
+        ax.set_ylabel(ds[varname_y].attrs['units'])
     ax.legend()
     if title is not None:
         ax.set_title(title)
@@ -167,6 +210,10 @@ def _seldict(ds, region_val, vdim_name, vdim_ind):
 
     return seldict
 
+def _varnames_resolved(varnames, component):
+    """resolve varnames to underlying varname that appears in files"""
+    return [_varname_resolved(varname, component) for varname in varnames]
+
 def _varname_resolved(varname, component):
     """resolve varname to underlying varname that appears in files"""
 
@@ -175,16 +222,15 @@ def _varname_resolved(varname, component):
 
     if varname not in var_specs_all[component]['vars']:
         return varname
-    
+
     var_spec = var_specs_all[component]['vars'][varname]
-    
+
     return var_spec['varname'] if 'varname' in var_spec else varname
 
-def _tseries_gen_wrap(varname, component, experiment, ensemble, stream, freq, clobber, cluster_in=None):
+def _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, entries, cluster_in=None):
     """
     return path for file containing tseries for varname for a single ensemble member
         creating the file if necessary
-    assumes that data_catalog.set_catalog has been called
     """
     if freq not in ['mon', 'ann']:
         msg = f'freq={freq} not implemented'
@@ -199,11 +245,10 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, stream, freq, cl
         # generate timeseries
         try:
             if freq == 'mon':
-                ds = _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in)
+                ds = _tseries_gen(varname, component, ensemble, entries, cluster_in)
             if freq == 'ann':
-                freq_tmp = 'mon'
                 mon_path = _tseries_gen_wrap(varname, component, experiment,
-                                             ensemble, stream, freq_tmp, clobber, cluster_in)
+                                             ensemble, 'mon', clobber, entries, cluster_in)
                 ds = esmlab_wrap.compute_ann_mean(xr.open_dataset(mon_path))
         except:
             # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
@@ -211,6 +256,8 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, stream, freq, cl
             raise
         # write generated timeseries
         ds.to_netcdf(tseries_path, format='NETCDF3_64BIT')
+        print_timestamp(f'{tseries_path} written')
+
         # remove genlock file, indicating that tseries_path has been generated
         os.remove(tseries_path_genlock)
 
@@ -221,16 +268,13 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, stream, freq, cl
 
     return tseries_path
 
-def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
+def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     """
     generate a tseries for a particular ensemble member, return a Dataset object
-    assumes that data_catalog.set_catalog has been called
     """
     print(f'entering _tseries_gen for {varname}')
     varname_resolved = _varname_resolved(varname, component)
-    fnames = data_catalog.get_files(
-        variable=varname_resolved, component=component,
-        stream=stream, experiment=experiment, ensemble=ensemble)
+    fnames = entries.loc[entries['ensemble'] == ensemble].files.tolist()
     print(fnames)
 
     with open(var_specs_fname, mode='r') as fptr:
@@ -256,18 +300,26 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
         rank = len(vardims)
         vertlen = ds_in.dims[vardims[1]] if rank > 3 else 1
         tlen = ds_in.dims[time_name] * len(fnames)
-        time_chunksize = 12 if rank < 4 else 1
+        time_chunksize = 10*12 if rank < 4 else 2
         ds_in.chunk(chunks={time_name: time_chunksize})
         time_encoding = ds_in[time_name].encoding
         var_encoding = ds_in[varname_resolved].encoding
         ds_encoding = ds_in.encoding
+        drop_var_names = tseries_drop_var_names(component, ds_in)
 
     # instantiate cluster, if not provided via argument
-    cluster = ncar_jobqueue.NCARCluster() if cluster_in is None else cluster_in
+    # ignore dashboard warnings when instantiating
+    if cluster_in is None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(action='ignore', module='.*dashboard')
+            cluster = ncar_jobqueue.NCARCluster()
+    else:
+        cluster = cluster_in
 
-    workers = 2
-    workers += 2 * math.log2(tlen / time_chunksize)
-    workers += 2 * math.log2(vertlen)
+    workers = 1
+    workers += math.log2(tlen / time_chunksize)
+    workers += math.log2(vertlen)
+    workers *= 4
     workers = 2 * round(workers/2) # round to nearest multiple of 2
     cluster.scale(workers)
 
@@ -275,14 +327,18 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
 
     # create dask distributed client, connecting to workers
     with dask.distributed.Client(cluster) as client:
+        print_timestamp('client instantiated')
+
         # tool to help track down file inconsistencies that trigger errors in open_mfdataset
         # test_open_mfdataset(fnames, time_chunksize)
 
         # data_vars = 'minimal', to avoid introducing time dimension to time-invariant fields when there are multiple files
         # only chunk in time, because if you chunk over spatial dims, then sum results depend on chunksize
         #     https://github.com/pydata/xarray/issues/2902
-        with xr.open_mfdataset(fnames, data_vars='minimal', combine='by_coords',
-                               chunks={time_name: time_chunksize}) as ds_in:
+        with xr.open_mfdataset(fnames, data_vars='minimal', coords='minimal', compat='override', combine='by_coords',
+                               chunks={time_name: time_chunksize}, drop_variables=drop_var_names) as ds_in:
+            print_timestamp('open_mfdataset returned')
+
             # restore encoding for time from first file
             ds_in[time_name].encoding = time_encoding
 
@@ -298,6 +354,7 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
             weight_attrs = weight.attrs
             weight = get_rmask(ds_in, component) * weight
             weight.attrs = weight_attrs
+            print_timestamp('weight constructed')
 
             # use var specific tseries_op if it exists, otherwise use tseries_op for component
             if 'tseries_op' in var_spec:
@@ -322,6 +379,8 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
                 msg = f'tseries_op={tseries_op} not implemented'
                 raise NotImplementedError(msg)
 
+            print_timestamp('da_out computation setup')
+
             # propagate some settings from da_in to da_out
             da_out.encoding['dtype'] = da_in.encoding['dtype']
             copy_fill_settings(da_in, da_out)
@@ -329,11 +388,17 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
             # change output units, if specified in var_spec
             units_key = 'integral_display_units' if tseries_op == 'integrate' else 'display_units'
             if units_key in var_spec:
-                da_out.values = cf_units.Unit(da_out.attrs['units']).convert(
-                    da_out.values, cf_units.Unit(clean_units(var_spec[units_key])))
-                da_out.attrs['units'] = var_spec[units_key]
+                conv_units(da_out, var_spec[units_key])
+                print_timestamp('da_out units converted')
 
             ds_out = da_out.to_dataset()
+
+            print_timestamp('ds_out generated')
+
+            # add regional sum of weights
+            weight_sum = weight.sum(dim=reduce_dims)
+            weight_sum.attrs['long_name'] = 'sum of weights used in tseries generation'
+            ds_out['weight_sum'] = weight_sum
 
             ds_out[time_name] = copy_fill_settings(ds_in[time_name], ds_out[time_name])
 
@@ -348,8 +413,12 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
                 copy_var_out = copy_var_in
                 ds_out[copy_var_name] = copy_fill_settings(copy_var_in, copy_var_out)
 
+            print_timestamp('copy_var_names added')
+
             # set ds_out.time to mid-interval values
             time_set_mid(ds_out, time_name)
+
+            print_timestamp('time_set_mid returned')
 
             # copy file attributes
             ds_out.attrs = ds_in.attrs
@@ -369,6 +438,8 @@ def _tseries_gen(varname, component, stream, experiment, ensemble, cluster_in):
 
             # force computation of ds_out, while resources of client are still available
             ds_out.load()
+
+    print_timestamp('ds_in and client closed')
 
     # if cluster was instantiated here, close it
     if cluster_in is None:
@@ -445,34 +516,48 @@ def get_rmask(ds, component):
     if component == 'ocn':
         dim_cnt_check(ds, 'KMT', 2)
         lateral_dims = ds['KMT'].dims
-        KMT = ds['KMT'].fillna(0)
+        KMT = ds['KMT'].fillna(0).load() # treat missing-values, which arise from land-block elimination as 0
+        TLAT = ds['TLAT'].load()
         rmask_od['Global'] = xr.where(KMT > 0, 1.0, 0.0)
-        rmask_od['SouOce (90S-30S)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -30.0), 1.0, 0.0)
-        rmask_od['SH_high_lat (90S-44S)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(100.0) < -44.0), 1.0, 0.0)
-        rmask_od['SH_mid_lat (44S-18S)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= -44.0) & (ds['TLAT'].fillna(100.0) < -18.0), 1.0, 0.0)
-        rmask_od['low_lat (18S-18N)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= -18.0) & (ds['TLAT'].fillna(100.0) < 18.0), 1.0, 0.0)
-        rmask_od['NH_mid_lat (18N-49N)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 18.0) & (ds['TLAT'].fillna(100.0) < 49.0), 1.0, 0.0)
-        rmask_od['NH_high_lat (49N-90N)'] = xr.where((KMT > 0) & (ds['TLAT'].fillna(-100.0) >= 49.0), 1.0, 0.0)
+        rmask_od['SouOce (90S-30S)'] = xr.where((KMT > 0) & (TLAT < -30.0), 1.0, 0.0)
+        rmask_od['SH_high_lat (90S-44S)'] = xr.where((KMT > 0) & (TLAT < -44.0), 1.0, 0.0)
+        rmask_od['SH_mid_lat (44S-18S)'] = xr.where((KMT > 0) & (TLAT >= -44.0) & (TLAT < -18.0), 1.0, 0.0)
+        rmask_od['low_lat (18S-18N)'] = xr.where((KMT > 0) & (TLAT >= -18.0) & (TLAT < 18.0), 1.0, 0.0)
+        rmask_od['NH_mid_lat (18N-49N)'] = xr.where((KMT > 0) & (TLAT >= 18.0) & (TLAT < 49.0), 1.0, 0.0)
+        rmask_od['NH_high_lat (49N-90N)'] = xr.where((KMT > 0) & (TLAT >= 49.0), 1.0, 0.0)
     if component == 'ice':
         dim_cnt_check(ds, 'tmask', 2)
         dim_cnt_check(ds, 'TLAT', 2)
         lateral_dims = ds['tmask'].dims
-        rmask_od['NH'] = xr.where((ds['tmask'] == 1) & (ds['TLAT'].fillna(-100.0) >= 0.0), 1.0, 0.0)
-        rmask_od['SH'] = xr.where((ds['tmask'] == 1) & (ds['TLAT'].fillna(100.0) < 0.0), 1.0, 0.0)
+        tmask = ds['tmask'].load()
+        TLAT = ds['TLAT'].load()
+        rmask_od['NH'] = xr.where((tmask == 1) & (TLAT >= 0.0), 1.0, 0.0)
+        rmask_od['SH'] = xr.where((tmask == 1) & (TLAT < 0.0), 1.0, 0.0)
     if component == 'lnd':
         dim_cnt_check(ds, 'landfrac', 2)
         lateral_dims = ds['landfrac'].dims
         rmask_od['Global'] = xr.where(ds['landfrac'] > 0, 1.0, 0.0)
+#         lat = ds['lat'].load()
+#         lon = ds['lon'].load()
 #         rmask_od['CentralAfrica'] = xr.where((ds['landfrac'] > 0)
-#                                              & (ds['lat'] >= -5.0) & (ds['lat'] < 5.0)
-#                                              & (ds['lon'] >= 0.0) & (ds['lon'] < 30.0), 1.0, 0.0)
+#                                              & (lat >= -5.0) & (lat < 5.0)
+#                                              & (lon >= 0.0) & (lon < 30.0), 1.0, 0.0)
     if component == 'atm':
         dim_cnt_check(ds, 'gw', 1)
         lateral_dims = ('lat', 'lon')
-        rmask_od['Global'] = xr.where((ds['lat'] > -100.0) & (ds['lon'] > -400.0), 1.0, 0.0)
+        lat = ds['lat'].load()
+        lon = ds['lon'].load()
+        rmask_od['Global'] = xr.where((lat > -100.0) & (lon > -400.0), 1.0, 0.0)
+        rmask_od['SH'] = xr.where((lat < 0.0) & (lon > -400.0), 1.0, 0.0)
+        rmask_od['SH_Trop'] = xr.where((lat > -30) & (lat < 0.0) & (lon > -400.0), 1.0, 0.0)
+        rmask_od['NH'] = xr.where((lat > 0.0) & (lon > -400.0), 1.0, 0.0)
+        rmask_od['NH_Trop'] = xr.where((lat > 0.0) & (lat < 30.0) & (lon > -400.0), 1.0, 0.0)
+        rmask_od['nino34'] = xr.where((lat > -5.0) & (lat < 5.0) & (lon > 190) & (lon < 240), 1.0, 0.0)
     if len(rmask_od) == 0:
         msg = f'unknown component={component}'
         raise ValueError(msg)
+
+    print_timestamp('rmask_od created')
 
     rmask = xr.DataArray(np.zeros((len(rmask_od), ds.dims[lateral_dims[0]], ds.dims[lateral_dims[1]])),
                          dims=('region', lateral_dims[0], lateral_dims[1]),
@@ -498,3 +583,17 @@ def tseries_copy_var_names(component):
     if component == 'atm':
         return ['P0', 'hyai', 'hyam', 'hybi', 'hybm', 'co2vmr', 'ch4vmr', 'f11vmr', 'f12vmr', 'n2ovmr', 'sol_tsi']
     return []
+
+def tseries_drop_var_names(component, ds):
+    """return component/Dataset specific list of vars to drop when opening netcdf files"""
+    if component == 'lnd':
+        retval = []
+        Time_constant_3Dvars = 'ZSOI:DZSOI:WATSAT:SUCSAT:BSW:HKSAT:ZLAKE:DZLAKE'
+        for varname in Time_constant_3Dvars.split(':'):
+            if varname in ds:
+                retval.append(varname)
+        return retval
+    return []
+
+def print_timestamp(msg):
+    print(':'.join([str(datetime.now()), msg]))

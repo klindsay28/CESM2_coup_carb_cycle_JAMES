@@ -1,31 +1,42 @@
 """utility functions"""
 
-import re
-
 import cftime
 import cf_units
 import numpy as np
+import xarray as xr
 
 from xr_ds_ex import xr_ds_ex
 
-def clean_units(units):
-    """replace some troublesome unit terms with acceptable replacements"""
-    replacements = {'kgC':'kg', 'gC':'g', 'gC13':'g', 'gC14':'g', 'gN':'g',
-                    'unitless':'1',
-                    'years':'common_years', 'yr':'common_year',
-                    'meq':'mmol', 'neq':'nmol'}
-    units_split = re.split('( |\(|\)|\^|\*|/|-[0-9]+|[0-9]+)', units)
-    units_split_repl = \
-        [replacements[token] if token in replacements else token for token in units_split]
-    return ''.join(units_split_repl)
+def is_date(da):
+    """
+    Determine if da is a date-like variable.
+    If da values are objects, only datetime objects are recognized as date-like.
+    Otherwise, the units attribute is checked to see if it is date-like,
+        using cf-units's is_time_reference.
+    Return False if da values are not objects and da has no units attribute.
+    """
+    if da.dtype == np.dtype('O'):
+        return isinstance(da.values[0], cftime.datetime)
+    if 'units' in da.attrs:
+        return cf_units.Unit(da.attrs['units']).is_time_reference()
+    return False
 
-def conv_units(da, units_out):
+def repl_coord(coordname, ds1, ds2, deep=False):
     """
-    convert units of da to units_out inplace
-    return modified da
+    Return copy of d2 with coordinate coordname replaced, using coordname from ds1.
+    The returned Dataset is otherwise a copy of ds2.
+    The copy is deep or not depending on the argument deep.
     """
-    da.values = cf_units.Unit(da.attrs['units']).convert(da.values, cf_units.Unit(clean_units(units_out)))
-    da.attrs['units'] = units_out
+    if 'bounds' in ds2[coordname].attrs:
+        tb_name = ds2[coordname].attrs['bounds']
+        ds_out = ds2.drop(tb_name).copy(deep)
+    else:
+        ds_out = ds2.copy(deep)
+    ds_out[coordname] = ds1[coordname]
+    if 'bounds' in ds1[coordname].attrs:
+        tb_name = ds1[coordname].attrs['bounds']
+        ds_out[tb_name] = ds1[tb_name]
+    return ds_out
 
 def copy_fill_settings(da_in, da_out):
     """
@@ -97,3 +108,57 @@ def time_year_plus_frac(ds, time_name):
     tvals_days = cftime.date2num(tvals_cftime, 'days since 0000-01-01', calendar='noleap')
 
     return tvals_days / 365.0
+
+def smooth_1d_np(vals, filter_len=10*12, ret_edge_len=False):
+    if filter_len % 2 == 1:
+        smooth_edge_len = (filter_len - 1) // 2
+        w = np.ones(filter_len)
+    else:
+        smooth_edge_len = filter_len // 2
+        w = np.ones(filter_len+1)
+        w[0] = 0.5
+        w[-1] = 0.5
+    w *= 1.0 / sum(w)
+    ret_val = np.convolve(w, vals, mode='same')
+    ret_val[0:smooth_edge_len] = np.nan
+    ret_val[-1:-1-smooth_edge_len:-1] = np.nan
+    if ret_edge_len:
+        return ret_val, smooth_edge_len
+    else:
+        return ret_val
+
+def smooth(da, filter_len=10*12, ret_edge_len=False):
+    """apply smooth_1d_np to da values along leading dimension of da"""
+    da_out = da.copy()
+    if len(da_out.dims) == 1:
+        da_out.values, smooth_edge_len = smooth_1d_np(da_out.values, filter_len, ret_edge_len=True)
+    else:
+        da_stack = da_out.stack(stackdim=da_out.dims[1:])
+        for stackdim_ind in range(da_stack.shape[-1]):
+            da_stack.values[:,stackdim_ind], smooth_edge_len = smooth_1d_np(da_stack.values[:,stackdim_ind], filter_len, ret_edge_len=True)
+    if ret_edge_len:
+        return da_out, smooth_edge_len
+    else:
+        return da_out
+
+def da_normalize(da):
+    """normalize da values along leading dimension"""
+    dimname = da.dims[0]
+    da_out = da.copy()
+    da_out -= da.mean(dimname)
+    da_out /= da_out.std(dimname)
+    da_out.attrs['long_name'] = ' '.join([da_out.attrs['long_name'], f'(normalized along {dimname} dimension)'])
+    da_out.attrs['units'] = '1'
+    return da_out
+
+def da_w_lags(da, max_lag=30):
+    """
+    return da with added lag dimension
+    lagging is done along da's leading dimension
+    """
+    dimname = da.dims[0]
+    lags = np.arange(-max_lag, max_lag+1)
+    da_out = da.expand_dims(dim={'lag': lags}).copy()
+    for lag_ind, lag in enumerate(lags):
+        da_out.values[lag_ind,:] = da.shift({dimname: lag}).values
+    return da_out

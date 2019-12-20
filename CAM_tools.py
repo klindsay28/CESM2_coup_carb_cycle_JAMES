@@ -4,8 +4,7 @@ import cf_units
 import xarray as xr
 
 from CIME_shr_const import CIME_shr_const
-from xarray_w_units import mult_w_units, div_w_units, subtract_w_units
-from utils import conv_units
+from utils_units import conv_units, mult_w_units, div_w_units, subtract_w_units
 
 def CAM_dry_mass_model_avg(ds):
     """dry mass of model domain for CAM"""
@@ -25,9 +24,7 @@ def CAM_dry_mass_model_avg(ds):
 def CAM_kg_to_dry_vmr(ds, mw):
     """compute conversion factor going from kg to dry vmr"""
 
-    four_pi = mult_w_units(4.0, CIME_shr_const('pi'))
-    rearth = CIME_shr_const('rearth')
-    surf_area = mult_w_units(four_pi, mult_w_units(rearth, rearth))
+    surf_area = ds['weight_sum']
 
     dry_mass_model = mult_w_units(CAM_dry_mass_model_avg(ds), surf_area)
     moles_dair = div_w_units(dry_mass_model, CIME_shr_const('mwdair'))

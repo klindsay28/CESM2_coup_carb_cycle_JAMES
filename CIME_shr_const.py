@@ -19,7 +19,7 @@ _CIME_shr_const_dict = {
                                   'units': 'm'}),
     'mwdair': xr.DataArray(28.966,
                            attrs={'long_name': 'molecular weight of dry air',
-                                  'units': 'g/mol'}),    
+                                  'units': 'g/mol'}),
 }
 
 def CIME_shr_const(name):
