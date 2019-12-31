@@ -64,6 +64,7 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
 
     # if cluster was instantiated here, close it
     if cluster_in is None:
+        ds.load()
         cluster.close()
 
     return ds

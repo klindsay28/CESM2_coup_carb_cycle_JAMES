@@ -31,6 +31,7 @@ def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_
         ax.set_title(title)
     if fname is not None:
         plt.savefig(fname, dpi=600)
+    return ax
 
 def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
     """
@@ -60,6 +61,7 @@ def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_nam
         ax.set_title(title)
     if fname is not None:
         plt.savefig(fname, dpi=600)
+    return ax
 
 def plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), region_val=None, fname=None):
     """
@@ -80,6 +82,7 @@ def plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), regi
         ax.set_title(title)
     if fname is not None:
         plt.savefig(fname, dpi=600)
+    return ax
 
 def _seldict(ds, region_val, vdim_name, vdim_ind):
     """
