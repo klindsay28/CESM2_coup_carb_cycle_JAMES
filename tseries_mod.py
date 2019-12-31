@@ -18,10 +18,11 @@ import ncar_jobqueue
 
 import data_catalog
 import esmlab_wrap
-from utils import copy_fill_settings, dim_cnt_check, time_set_mid
+from utils import print_timestamp, copy_fill_settings, dim_cnt_check, time_set_mid
 from utils_units import clean_units, conv_units
+from CIME_shr_const import CIME_shr_const
 
-var_specs_fname = 'var_specs.yaml'
+from config import var_specs_fname
 time_name = 'time'
 
 def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', clobber=None, cluster_in=None):
@@ -34,8 +35,8 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
     # if no stream is specified, get the default stream for this component
     if stream is None:
         with open(var_specs_fname, mode='r') as fptr:
-            var_specs = yaml.safe_load(fptr)
-        stream = var_specs[component]['stream']
+            var_specs_all = yaml.safe_load(fptr)
+        stream = var_specs_all[component]['stream']
 
     if clobber is None:
         clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
@@ -75,8 +76,8 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
     # if no stream is specified, get the default stream for this component
     if stream is None:
         with open(var_specs_fname, mode='r') as fptr:
-            var_specs = yaml.safe_load(fptr)
-        stream = var_specs[component]['stream']
+            var_specs_all = yaml.safe_load(fptr)
+        stream = var_specs_all[component]['stream']
 
     if clobber is None:
         clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
@@ -235,7 +236,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
         print_timestamp('client instantiated')
 
         # tool to help track down file inconsistencies that trigger errors in open_mfdataset
-        # test_open_mfdataset(fnames, time_chunksize)
+        # test_open_mfdataset(fnames, time_chunksize, varname)
 
         # data_vars = 'minimal', to avoid introducing time dimension to time-invariant fields when there are multiple files
         # only chunk in time, because if you chunk over spatial dims, then sum results depend on chunksize
@@ -352,11 +353,13 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
 
     return ds_out
 
-def test_open_mfdataset(paths, time_chunksize):
+def test_open_mfdataset(paths, time_chunksize, varname=None):
     for ind in range(len(paths)-1):
         print(' '.join(['testing open_mfdatset for', paths[ind], paths[ind+1]]))
         ds = xr.open_mfdataset(paths[ind:ind+2], data_vars='minimal', combine='by_coords',
                                chunks={time_name: time_chunksize})
+        if varname is not None:
+            print(ds[varname])
 
 def get_weight(ds, component, reduce_dims):
     """construct averaging/integrating weight appropriate for component and reduce_dims"""
@@ -392,8 +395,7 @@ def get_area(ds, component):
         return da_ret
     if component == 'atm':
         dim_cnt_check(ds, 'gw', 1)
-        rearth = 6.37122e6 # radius of earth used in CIME [m]
-        area_earth = 4.0 * math.pi * rearth**2 # area of earth in CIME [m2]
+        area_earth = 4.0 * CIME_shr_const('pi') * CIME_shr_const('rearth')**2 # area of earth in CIME [m2]
 
         # normalize area so that sum over 'lat', 'lon' yields area_earth
         area = ds['gw'] + 0.0 * ds['lon'] # add 'lon' dimension
@@ -499,6 +501,3 @@ def tseries_drop_var_names(component, ds):
                 retval.append(varname)
         return retval
     return []
-
-def print_timestamp(msg):
-    print(':'.join([str(datetime.now()), msg]))

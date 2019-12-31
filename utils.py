@@ -1,11 +1,16 @@
 """utility functions"""
 
+from datetime import datetime
+
 import cftime
 import cf_units
 import numpy as np
 import xarray as xr
 
 from xr_ds_ex import xr_ds_ex
+
+def print_timestamp(msg):
+    print(':'.join([str(datetime.now()), msg]))
 
 def is_date(da):
     """
@@ -48,7 +53,7 @@ def copy_fill_settings(da_in, da_out):
     else:
         da_out.encoding['_FillValue'] = None
     if 'missing_value' in da_in.encoding:
-        da_out.attrs['missing_value'] = da_in.encoding['missing_value']
+        da_out.encoding['missing_value'] = da_in.encoding['missing_value']
     return da_out
 
 def dim_cnt_check(ds, varname, dim_cnt):

@@ -26,7 +26,7 @@ for case in b40.prescribed_carb.001 \
    mkdir -p /glade/scratch/klindsay/archive/$case/ocn/proc/tseries/monthly
    cd /glade/scratch/klindsay/archive/$case/ocn/proc/tseries/monthly
 
-   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; ls *.FG_CO2.* *.FvPER_DIC.* *.FvICE_DIC.* *.photoC*"
-   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; cget *.FG_CO2.* *.FvPER_DIC.* *.FvICE_DIC.* *.photoC*"
+   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; ls *.FG_CO2.* *.FvPER_DIC.* *.FvICE_DIC.* *.IRON_FLUX.*"
+   hsi "cd /CCSM/csm/$case/ocn/proc/tseries/monthly ; cget *.FG_CO2.* *.FvPER_DIC.* *.FvICE_DIC.* *.IRON_FLUX.*"
 
 done

@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
-import data_catalog
+from data_catalog import build_catalog
+from config import expr_metadata_fname
 
-data_catalog.build_catalog('expr_metadata.yaml', clobber=True)
+build_catalog(expr_metadata_fname, clobber=True)

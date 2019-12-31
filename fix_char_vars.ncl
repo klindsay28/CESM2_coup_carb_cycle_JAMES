@@ -22,7 +22,10 @@ fix_fnames_tails := \
        ".027001-027912.nc", ".028001-028912.nc", ".029001-029912.nc", \
        ".030001-030912.nc" /)
 
-file_varnames = (/ "DIC", "DOC" /)
+file_varnames = (/ "DIC", "DOC", "TEMP", "POC_FLUX_IN", "POC_FLUX_100m", \
+                   "photoC_diat", "photoC_sp", "photoC_diaz", \
+                   "photoC_diat_zint_100m", "photoC_sp_zint_100m", "photoC_diaz_zint_100m" /)
+
 fix_varnames = (/ "moc_components", "transport_components", "transport_regions" /)
 
 do file_varname_ind = 0, dimsizes(file_varnames)-1

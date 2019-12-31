@@ -11,8 +11,12 @@ for case in b40.prescribed_carb.001 \
    echo $case
    mkdir -p /glade/scratch/klindsay/archive/$case/lnd/proc/tseries/monthly
    cd /glade/scratch/klindsay/archive/$case/lnd/proc/tseries/monthly
-   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.TOTECOSYSC.* *.NBP.* *.XSMRPOOL.* *.GPP.* *.NPP.* *.ER.* *.AR.* *.HR.*"
-   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.TOTECOSYSC.* *.NBP.* *.XSMRPOOL.* *.GPP.* *.NPP.* *.ER.* *.AR.* *.HR.*"
+   # carbon pools
+   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.TOTECOSYSC.* *.TOTVEGC.* *.TOTSOMC.* *.XSMRPOOL.*"
+   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.TOTECOSYSC.* *.TOTVEGC.* *.TOTSOMC.* *.XSMRPOOL.*"
+   # carbon fluxes
+   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.NBP.* *.GPP.* *.NPP.* *.ER.* *.AR.* *.HR.*"
+   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.NBP.* *.GPP.* *.NPP.* *.ER.* *.AR.* *.HR.*"
 
 done
 

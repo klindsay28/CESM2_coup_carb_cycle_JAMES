@@ -158,43 +158,52 @@ experiments:
               parent_experiment: None
               parent_branch_year: 1
               root_dir: /glade/scratch/klindsay/archive/b40.prescribed_carb.001
+              hpss_root_dir: /CCSM/csm/b40.prescribed_carb.001
         1pctCO2-cmip5:
             - case: b40.1850_ramp.1deg.ncbdrd.001
               parent_experiment: piControl-cmip5
               parent_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbdrd.001
+              hpss_root_dir: /CCSM/csm/b40.1850_ramp.1deg.ncbdrd.001
         1pctCO2-bgc-cmip5:
             - case: b40.1850_ramp.1deg.ncbdrc.001
               parent_experiment: piControl-cmip5
               parent_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbdrc.001
+              hpss_root_dir: /CCSM/csm/b40.1850_ramp.1deg.ncbdrc.001
         1pctCO2-rad-cmip5:
             - case: b40.1850_ramp.1deg.ncbcrd.002
               parent_experiment: piControl-cmip5
               parent_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.1850_ramp.1deg.ncbcrd.002
+              hpss_root_dir: /CCSM/csm/b40.1850_ramp.1deg.ncbcrd.002
         historical-cmip5:
             - case: b40.20th.1deg.bdrd.001
               parent_experiment: piControl-cmip5
               parent_branch_year: 151
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.bdrd.001
+              hpss_root_dir: /CCSM/csm/b40.20th.1deg.bdrd.001
         rcp85-cmip5:
             - case: b40.rcp8_5.1deg.bdrd.001
               parent_experiment: historical-cmip5
               parent_branch_year: 2005
               root_dir: /glade/scratch/klindsay/archive/b40.rcp8_5.1deg.bdrd.001
+              hpss_root_dir: /CCSM/csm/b40.rcp8_5.1deg.bdrd.001
         esm-piControl-cmip5:
             - case: b40.coup_carb.004
               parent_experiment: None
               parent_branch_year: 1
               root_dir: /glade/scratch/klindsay/archive/b40.coup_carb.004
+              hpss_root_dir: /CCSM/csm/b40.coup_carb.004
         esm-hist-cmip5:
             - case: b40.20th.1deg.coup.001
               parent_experiment: esm-piControl-cmip5
               parent_branch_year: 351
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.coup.001
+              hpss_root_dir: /CCSM/csm/b40.20th.1deg.coup.001
         esm-rcp85-cmip5:
             - case: b40.rcp8_5.1deg.bprp.002
               parent_experiment: esm-hist-cmip5
               parent_branch_year: 2005
               root_dir: /glade/scratch/klindsay/archive/b40.rcp8_5.1deg.bprp.002
+              hpss_root_dir: /CCSM/csm/b40.rcp8_5.1deg.bprp.002
