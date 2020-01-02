@@ -1,6 +1,12 @@
 Scripts for analysis and figures related to paper documenting
 coupled carbon cycle in CESM2
 
+conda env remove --name CESM2_coup_carb_cycle_JAMES
+conda env create -f conda-env.yml
+conda activate CESM2_coup_carb_cycle_JAMES
+cd esmlab_dev
+pip install -e .
+
 intended workflow:
 
 1) generate data catalog of model output with ./build_catalog.py

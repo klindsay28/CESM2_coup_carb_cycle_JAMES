@@ -14,7 +14,7 @@ dependencies:
 - jupyterlab
 - jupyter_contrib_nbextensions
 - matplotlib
-- xarray=0.14.*
+- xarray=0.14.0
 # serialization
 - netcdf4
 # Misc
@@ -23,5 +23,5 @@ dependencies:
 - nc-time-axis
 - esmpy
 - pip:
-  - git+https://github.com/NCAR/esmlab.git
+#   - git+https://github.com/NCAR/esmlab.git
   - ncar-jobqueue
