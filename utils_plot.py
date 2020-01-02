@@ -6,12 +6,13 @@ import matplotlib.pyplot as plt
 
 from utils import is_date, time_year_plus_frac
 
-def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
+def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None, ax=None):
     """
     create a simple plot of a tseries variable for multiple datasets
     use units from last tseries variable for ylabel
     """
-    fig, ax = plt.subplots(figsize=figsize)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
     for ds_ind, ds in enumerate(ds_list):
         varname_x = ds[varname].dims[0]
         da_x = ds[varname_x]
@@ -30,15 +31,16 @@ def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(fname, dpi=600)
+        plt.savefig(fname, dpi=600, metadata={'CreationDate': None})
     return ax
 
-def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None):
+def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None, ax=None):
     """
     create a simple plot of a list of tseries variables
     use units from last tseries variable for ylabel
     """
-    fig, ax = plt.subplots(figsize=figsize)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
     seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
     for varname in varnames:
         varname_x = ds[varname].dims[0]
@@ -60,15 +62,16 @@ def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_nam
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(fname, dpi=600)
+        plt.savefig(fname, dpi=600, metadata={'CreationDate': None})
     return ax
 
-def plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), region_val=None, fname=None):
+def plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), region_val=None, fname=None, ax=None):
     """
     create a simple plot of a list of tseries variables vs a single tseries variable
     use units from last tseries variable for ylabel
     """
-    fig, ax = plt.subplots(figsize=figsize)
+    if ax is None:
+        fig, ax = plt.subplots(figsize=figsize)
     for varname_y in varnames_y:
         if region_val is None:
             ax.plot(ds[varname_x], ds[varname_y], label=varname_y)
@@ -81,7 +84,7 @@ def plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), regi
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(fname, dpi=600)
+        plt.savefig(fname, dpi=600, metadata={'CreationDate': None})
     return ax
 
 def _seldict(ds, region_val, vdim_name, vdim_ind):
