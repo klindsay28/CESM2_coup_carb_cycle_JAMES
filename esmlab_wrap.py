@@ -22,6 +22,11 @@ def compute_ann_mean(ds):
     # reset time to midpoint
     utils.time_set_mid(ds_out, 'time')
 
+    # ensure NaN _FillValues do not get generated when the file is written out
+    for var in ds_out.variables:
+        if '_FillValue' not in ds_out[var].encoding:
+            ds_out[var].encoding['_FillValue'] = None
+
     # propagate particular encoding values
     for key in ['unlimited_dims']:
         if key in ds.encoding:

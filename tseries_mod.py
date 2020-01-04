@@ -162,7 +162,7 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, e
             os.remove(tseries_path_genlock)
             raise
         # write generated timeseries
-        ds.to_netcdf(tseries_path, format='NETCDF3_64BIT')
+        ds.to_netcdf(tseries_path, format='NETCDF4_CLASSIC')
         print_timestamp(f'{tseries_path} written')
 
         # remove genlock file, indicating that tseries_path has been generated
@@ -314,7 +314,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
                 tb_name = ds_in[time_name].attrs['bounds']
                 ds_out[tb_name] = ds_in[tb_name]
 
-            # copy componet specific vars
+            # copy component specific vars
             for copy_var_name in tseries_copy_var_names(component):
                 copy_var_in = ds_in[copy_var_name]
                 copy_var_out = copy_var_in
@@ -342,6 +342,11 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             for key in ['unlimited_dims']:
                 if key in ds_encoding:
                     ds_out.encoding[key] = ds_encoding[key]
+
+            # ensure NaN _FillValues do not get generated when the file is written out
+            for var in ds_out.variables:
+                if '_FillValue' not in ds_out[var].encoding:
+                    ds_out[var].encoding['_FillValue'] = None
 
             # force computation of ds_out, while resources of client are still available
             ds_out.load()
