@@ -92,6 +92,9 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
     else:
         entries = entries_in.loc[entries_in['variable'] == varname_resolved]
 
+    if entries.empty:
+        raise ValueError(f'no file matches found for varname={varname}, component={component}, experiment={experiment}')
+
     # loop over matching ensembles
     paths = []
     for ensemble in entries.ensemble.unique():
@@ -156,6 +159,7 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, e
             if freq == 'ann':
                 mon_path = _tseries_gen_wrap(varname, component, experiment,
                                              ensemble, 'mon', clobber, entries, cluster_in)
+                print_timestamp(f'computing ann means from mon means for {varname}')
                 ds = esmlab_wrap.compute_ann_mean(xr.open_dataset(mon_path))
         except:
             # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
@@ -170,7 +174,7 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, e
 
     # wait until genlock file doesn't exists, in case it was being generated or written
     while os.path.exists(tseries_path_genlock):
-        print('genlock file exists, waiting')
+        print_timestamp('genlock file exists, waiting')
         time.sleep(5)
 
     return tseries_path
@@ -179,7 +183,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     """
     generate a tseries for a particular ensemble member, return a Dataset object
     """
-    print(f'entering _tseries_gen for {varname}')
+    print_timestamp(f'entering _tseries_gen for {varname}')
     varname_resolved = _varname_resolved(varname, component)
     fnames = entries.loc[entries['ensemble'] == ensemble].files.tolist()
     print(fnames)

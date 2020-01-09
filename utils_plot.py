@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from utils import is_date, time_year_plus_frac
 
-def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None, ax=None):
+def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None, ax=None, xoffsets=None, yoffsets=None):
     """
     create a simple plot of a tseries variable for multiple datasets
     use units from last tseries variable for ylabel
@@ -22,8 +22,13 @@ def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_
         else:
             xvals = da_x.values
             xlabel = f'{varname_x} ({da_x.attrs["units"]})' if 'units' in da_x.attrs else varname_x
+        if xoffsets is not None:
+            xvals = xvals.copy() + xoffsets[ds_ind]
         seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
-        ax.plot(xvals, ds[varname].sel(seldict), label=legend_list[ds_ind])
+        yvals = ds[varname].sel(seldict).values
+        if yoffsets is not None:
+            yvals = yvals.copy() + yoffsets[ds_ind]
+        ax.plot(xvals, yvals, label=legend_list[ds_ind])
     ax.set_xlabel(xlabel)
     if ds[varname].attrs['units'] != '1':
         ax.set_ylabel(ds[varname].attrs['units'])

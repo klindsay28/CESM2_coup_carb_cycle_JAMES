@@ -69,6 +69,8 @@ lnd:
             integral_display_units: Pg
         TOTVEGC:
             integral_display_units: Pg
+        TOTPRODC:
+            integral_display_units: Pg
 
         # C inventories whose rate of change matches NBP
         TOTECOSYSC:
@@ -98,6 +100,8 @@ lnd:
         ER:
             integral_display_units: Pg yr-1
         NEP:
+            integral_display_units: Pg yr-1
+        COL_FIRE_CLOSS:
             integral_display_units: Pg yr-1
 ocn:
     stream: pop.h
@@ -131,6 +135,12 @@ ocn:
             tseries_op: integrate
             integral_display_units: Pg yr-1
             derived_from_varnames: [POC_FLUX_IN]
+            derive_op: sel_100m
+        CaCO3_FLUX_100m:
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
+            derived_from_varnames: [CaCO3_FLUX_IN]
             derive_op: sel_100m
         FG_CO2:
             unit_conv: (12 g)/(mol) # convert from mol to g C
@@ -197,6 +207,10 @@ ocn:
             unit_conv: (120.91 g)/(mol) # convert from mol to g
             tseries_op: integrate
             integral_display_units: Gg yr-1
+        photoC_TOT_zint_100m:
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         photoC_diat_zint_100m:
             unit_conv: (12 g)/(mol) # convert from mol to g C
             tseries_op: integrate
@@ -215,3 +229,25 @@ ocn:
             integral_display_units: Pg yr-1
             derived_from_varnames: [photoC_diaz]
             derive_op: zint_100m
+        photoC_TOT_zint:
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
+        photoC_diat_zint:
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
+            derived_from_varnames: [photoC_diat]
+            derive_op: zint
+        photoC_sp_zint:
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
+            derived_from_varnames: [photoC_sp]
+            derive_op: zint
+        photoC_diaz_zint:
+            unit_conv: (12 g)/(mol) # convert from mol to g C
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
+            derived_from_varnames: [photoC_diaz]
+            derive_op: zint

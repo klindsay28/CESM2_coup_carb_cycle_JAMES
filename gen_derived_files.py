@@ -19,7 +19,8 @@ def main():
                    'esm-piControl-cmip5', 'esm-hist-cmip5', 'esm-rcp85-cmip5']
 
     varnames = ['photoC_diat_zint_100m', 'photoC_sp_zint_100m', 'photoC_diaz_zint_100m',
-                'POC_FLUX_100m']
+                'photoC_diat_zint', 'photoC_sp_zint', 'photoC_diaz_zint',
+                'POC_FLUX_100m', 'CaCO3_FLUX_100m']
 
     for experiment in experiments:
         for varname in varnames:
@@ -39,9 +40,9 @@ def gen_derived_files(varname, component, experiment, stream=None, keep_read_src
         return
 
     # basic error checking on specified variable derivation
-    if var_spec['derive_op'] not in ['zint_100m', 'sel_100m']:
+    if var_spec['derive_op'] not in ['zint_100m', 'zint', 'sel_100m']:
         raise ValueError(f'unknown derive_op={var_spec["derive_op"]} for {varname}')
-    if var_spec['derive_op'] in ['zint_100m', 'sel_100m']:
+    if var_spec['derive_op'] in ['zint_100m', 'zint', 'sel_100m']:
         if len(var_spec['derived_from_varnames']) > 1:
             raise ValueError(f'too many derived_from_varnames specified for derive_op={var_spec["derive_op"]} for {varname}')
 
@@ -103,7 +104,7 @@ def gen_derived_files(varname, component, experiment, stream=None, keep_read_src
                     print(hsi_out)
                     src_fnames_disk_read.append(src_fname_disk)
                 src_fname_disk_dict[src_varname] = src_fname_disk
-            if var_spec['derive_op'] in ['zint_100m', 'sel_100m']:
+            if var_spec['derive_op'] in ['zint_100m', 'zint', 'sel_100m']:
                 gen_file_z_reduce(var_spec['derive_op'], src_fname_disk_dict, varname, dst_fname_disk)
 
     return
@@ -138,25 +139,33 @@ def gen_file_z_reduce(z_reduce_op, src_fname_disk_dict, varname, dst_fname_disk)
 
         # compute reduction on vert_dim
 
-        if z_reduce_op == 'zint_100m':
+        if z_reduce_op in ['zint_100m', 'zint']:
             if vert_dim not in ['z_t', 'z_t_150m']:
                 raise NotImplementedError(f'vert_dim={vert_dim} not implemented')
 
             vert_dim_len = ds_in.dims[vert_dim]
             zint_weight = ds_in['dz'].isel(z_t=slice(0, vert_dim_len)).rename({'z_t': vert_dim})
-            sel_dict = {vert_dim: slice(0, 100.0e2)}
+            sel_dict = {}
+            if z_reduce_op == 'zint_100m':
+                sel_dict[vert_dim] = slice(0, 100.0e2)
             da_out.values = (zint_weight.sel(sel_dict) * ds_in[src_varname].sel(sel_dict)).sum(vert_dim)
 
-            # set zint_100m specific metadata
+            # set zint_100m, zint specific metadata
             da_out.attrs['units'] = ' '.join([da_out.attrs['units'], 'cm'])
-            da_out.attrs['long_name'] = ' '.join([da_out.attrs['long_name'], 'Vertical Integral, 0-100m'])
+            long_name = da_out.attrs['long_name']
+            long_name += ' Vertical Integral'
+            if z_reduce_op == 'zint_100m':
+                long_name_suffix += ', 0-100m'
+            da_out.attrs['long_name'] = long_name
 
         if z_reduce_op == 'sel_100m':
             sel_dict = {vert_dim: 100.0e2}
             da_out.values = ds_in[src_varname].sel(sel_dict, method='nearest')
 
             # set sel_100m specific metadata
-            da_out.attrs['long_name'] = ' '.join([da_out.attrs['long_name'], 'at 100m'])
+            long_name = da_out.attrs['long_name']
+            long_name += ' at 100m'
+            da_out.attrs['long_name'] = long_name
 
         ds_out[varname] = da_out
 
