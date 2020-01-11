@@ -37,10 +37,10 @@ def repl_coord(coordname, ds1, ds2, deep=False):
         ds_out = ds2.drop(tb_name).copy(deep)
     else:
         ds_out = ds2.copy(deep)
-    ds_out[coordname] = ds1[coordname]
+    ds_out = ds_out.assign_coords({coordname: ds1[coordname]})
     if 'bounds' in ds1[coordname].attrs:
         tb_name = ds1[coordname].attrs['bounds']
-        ds_out[tb_name] = ds1[tb_name]
+        ds_out = xr.merge([ds_out, ds1[tb_name]])
     return ds_out
 
 def copy_fill_settings(da_in, da_out):
