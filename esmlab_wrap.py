@@ -32,14 +32,19 @@ def compute_ann_mean(ds):
         if key in ds.encoding:
             ds_out.encoding[key] = ds.encoding[key]
 
-    # copy file attributes, prepending history message
+    # copy file attributes
     for key in ds.attrs:
-        if key == 'history':
-            datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
-            msg = f'{datestamp}: created by esmlab.resample, with modifications from esmlab_wrap'
-            ds_out.attrs[key] = '\n'.join([msg, ds.attrs[key]])
-        else:
+        if key != 'history':
             ds_out.attrs[key] = ds.attrs[key]
+
+    # append to history file attribute if it already exists, otherwise set it
+    key = 'history'
+    datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
+    msg = f'{datestamp}: created by esmlab.resample, with modifications from esmlab_wrap'
+    if key in ds.attrs:
+        ds_out.attrs[key] = '\n'.join([msg, ds.attrs[key]])
+    else:
+        ds_out.attrs[key] = msg
 
     return ds_out
 

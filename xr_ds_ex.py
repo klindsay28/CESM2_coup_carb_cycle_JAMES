@@ -13,7 +13,7 @@ def xr_ds_ex(decode_times=True, nyrs=3, var_const=True):
     time_edges = np.insert(
         np.cumsum(npm.repmat(days_1yr, nyrs, 1)), 0, 0)
     time_bounds_vals = np.stack((time_edges[:-1], time_edges[1:]), axis=1)
-    time_vals = np.mean(time_bounds_vals, axis=1)
+    time_vals = 0.25 * time_bounds_vals[:,0] + 0.75 * time_bounds_vals[:,1]
     time_vals_yr = time_vals / 365.0
     if var_const:
         var_vals = np.ones_like(time_vals_yr)
@@ -37,7 +37,7 @@ def xr_ds_ex(decode_times=True, nyrs=3, var_const=True):
                                coords={'time':time_var})
     var = xr.DataArray(var_vals, name='var_ex', dims='time', coords={'time':time_var})
     ds = var.to_dataset()
-    ds = xr.merge((ds, time_bounds))
+    ds = xr.merge([ds, time_bounds])
 
     if decode_times:
         ds.time.encoding['units'] = time_units
