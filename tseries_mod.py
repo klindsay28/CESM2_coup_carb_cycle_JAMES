@@ -18,7 +18,7 @@ import ncar_jobqueue
 
 import data_catalog
 import esmlab_wrap
-from utils import print_timestamp, copy_fill_settings, dim_cnt_check, time_set_mid
+from utils import print_timestamp, copy_fill_settings, dim_cnt_check, time_set_mid, copy_var_names, drop_var_names
 from utils_units import clean_units, conv_units
 from CIME_shr_const import CIME_shr_const
 
@@ -206,17 +206,17 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     # approximate number of time levels, assuming all files have same number
     # save time encoding from first file, to restore it in the multi-file case
     #     https://github.com/pydata/xarray/issues/2921
-    with xr.open_dataset(fnames[0]) as ds_in:
-        vardims = ds_in[varname_resolved].dims
+    with xr.open_dataset(fnames[0]) as ds0:
+        vardims = ds0[varname_resolved].dims
         rank = len(vardims)
-        vertlen = ds_in.dims[vardims[1]] if rank > 3 else 1
-        tlen = ds_in.dims[time_name] * len(fnames)
+        vertlen = ds0.dims[vardims[1]] if rank > 3 else 1
+        tlen = ds0.dims[time_name] * len(fnames)
         time_chunksize = 10*12 if rank < 4 else 2
-        ds_in.chunk(chunks={time_name: time_chunksize})
-        time_encoding = ds_in[time_name].encoding
-        var_encoding = ds_in[varname_resolved].encoding
-        ds_encoding = ds_in.encoding
-        drop_var_names = tseries_drop_var_names(component, ds_in)
+        ds0.chunk(chunks={time_name: time_chunksize})
+        time_encoding = ds0[time_name].encoding
+        var_encoding = ds0[varname_resolved].encoding
+        ds_encoding = ds0.encoding
+        drop_var_names_loc = drop_var_names(component, ds0, varname_resolved)
 
     # instantiate cluster, if not provided via argument
     # ignore dashboard warnings when instantiating
@@ -247,7 +247,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
         # only chunk in time, because if you chunk over spatial dims, then sum results depend on chunksize
         #     https://github.com/pydata/xarray/issues/2902
         with xr.open_mfdataset(fnames, data_vars='minimal', coords='minimal', compat='override', combine='by_coords',
-                               chunks={time_name: time_chunksize}, drop_variables=drop_var_names) as ds_in:
+                               chunks={time_name: time_chunksize}, drop_variables=drop_var_names_loc) as ds_in:
             print_timestamp('open_mfdataset returned')
 
             # restore encoding for time from first file
@@ -319,7 +319,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
                 ds_out[tb_name] = ds_in[tb_name]
 
             # copy component specific vars
-            for copy_var_name in tseries_copy_var_names(component):
+            for copy_var_name in copy_var_names(component):
                 copy_var_in = ds_in[copy_var_name]
                 copy_var_out = copy_var_in
                 ds_out[copy_var_name] = copy_fill_settings(copy_var_in, copy_var_out)
@@ -494,20 +494,3 @@ def get_rmask(ds, component):
 def tseries_fname(varname, component, experiment, ensemble, freq):
     """return relative filename for tseries"""
     return f'{varname}_{component}_{experiment}_{ensemble:02d}_{freq}.nc'
-
-def tseries_copy_var_names(component):
-    """return component specific list of vars to copy into generated tseries files"""
-    if component == 'atm':
-        return ['P0', 'hyai', 'hyam', 'hybi', 'hybm', 'co2vmr', 'ch4vmr', 'f11vmr', 'f12vmr', 'n2ovmr', 'sol_tsi']
-    return []
-
-def tseries_drop_var_names(component, ds):
-    """return component/Dataset specific list of vars to drop when opening netcdf files"""
-    if component == 'lnd':
-        retval = []
-        Time_constant_3Dvars = 'ZSOI:DZSOI:WATSAT:SUCSAT:BSW:HKSAT:ZLAKE:DZLAKE'
-        for varname in Time_constant_3Dvars.split(':'):
-            if varname in ds:
-                retval.append(varname)
-        return retval
-    return []

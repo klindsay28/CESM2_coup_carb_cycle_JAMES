@@ -169,3 +169,31 @@ def da_w_lags(da, max_lag=30):
     for lag_ind, lag in enumerate(lags):
         da_out.values[lag_ind,:] = da.shift({dimname: -lag}).values
     return da_out
+
+def copy_var_names(component):
+    """return component specific list of vars to copy into generated Datasets"""
+    if component == 'atm':
+        return ['P0', 'hyai', 'hyam', 'hybi', 'hybm', 'co2vmr', 'ch4vmr', 'f11vmr', 'f12vmr', 'n2ovmr', 'sol_tsi']
+    return []
+
+def drop_var_names(component, ds, varname):
+    """return component/Dataset specific list of vars to drop when opening netcdf files"""
+    if component == 'lnd':
+        retval = []
+        Time_constant_3Dvars = 'ZSOI:DZSOI:WATSAT:SUCSAT:BSW:HKSAT:ZLAKE:DZLAKE'
+        for varname in Time_constant_3Dvars.split(':'):
+            if varname in ds:
+                retval.append(varname)
+        return retval
+    if component == 'ocn':
+        # drop non-used coordinates and variables that use them
+        # their presence causes xarray to generate incorrect coordinate attributes
+        coordnames = ['TLAT', 'TLONG', 'ULAT', 'ULONG']
+        drop_coordnames = [coordname for coordname in coordnames if coordname not in ds[varname].encoding['coordinates']]
+        retval = drop_coordnames
+        vars_on_drop_coordnames = [varname_tmp for varname_tmp in ds.variables
+                                   if 'coordinates' in ds[varname_tmp].encoding
+                                   and (set(drop_coordnames) & set(ds[varname_tmp].encoding['coordinates'].split(' ')))]
+        retval.extend(vars_on_drop_coordnames)
+        return retval
+    return []
