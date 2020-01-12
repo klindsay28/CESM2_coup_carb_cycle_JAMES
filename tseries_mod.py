@@ -60,7 +60,7 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
         if varind == 0:
             ds = ds_tmp
         else:
-            ds[varname] = ds_tmp[varname]
+            ds = xr.merge([ds, ds_tmp[varname]])
 
     # if cluster was instantiated here, close it
     if cluster_in is None:
@@ -308,21 +308,16 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
 
             # add regional sum of weights
             weight_sum = weight.sum(dim=reduce_dims)
+            weight_sum.name = 'weight_sum'
             weight_sum.attrs['long_name'] = 'sum of weights used in tseries generation'
-            ds_out['weight_sum'] = weight_sum
+            ds_out = xr.merge([ds_out, weight_sum])
 
-            ds_out[time_name] = copy_fill_settings(ds_in[time_name], ds_out[time_name])
-
-            # add time:bounds variable, if specified in ds_in
+            # copy particular variables from ds_in
+            copy_var_list = [time_name]
             if 'bounds' in ds_in[time_name].attrs:
-                tb_name = ds_in[time_name].attrs['bounds']
-                ds_out[tb_name] = ds_in[tb_name]
-
-            # copy component specific vars
-            for copy_var_name in copy_var_names(component):
-                copy_var_in = ds_in[copy_var_name]
-                copy_var_out = copy_var_in
-                ds_out[copy_var_name] = copy_fill_settings(copy_var_in, copy_var_out)
+                copy_var_list.append(ds_in[time_name].attrs['bounds'])
+            copy_var_list.extend(copy_var_names(component))
+            ds_out = xr.merge([ds_out, ds_in[copy_var_list]])
 
             print_timestamp('copy_var_names added')
 
