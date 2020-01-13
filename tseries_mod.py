@@ -55,12 +55,8 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
     else:
         cluster = cluster_in
 
-    for varind, varname in enumerate(varnames):
-        ds_tmp = tseries_get_var(varname, component, experiment, stream, freq, clobber, entries, cluster)
-        if varind == 0:
-            ds = ds_tmp
-        else:
-            ds = xr.merge([ds, ds_tmp[varname]])
+    ds = xr.merge([tseries_get_var(varname, component, experiment, stream, freq, clobber, entries, cluster)
+                   for varname in varnames])
 
     # if cluster was instantiated here, close it
     if cluster_in is None:
