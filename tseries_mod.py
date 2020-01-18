@@ -25,7 +25,7 @@ from CIME_shr_const import CIME_shr_const
 from config import var_specs_fname
 time_name = 'time'
 
-def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', clobber=None, cluster_in=None):
+def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', cache_dir='tseries', clobber=None, cluster_in=None):
     """
     return tseries for varnames, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -36,7 +36,9 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
     if stream is None:
         with open(var_specs_fname, mode='r') as fptr:
             var_specs_all = yaml.safe_load(fptr)
-        stream = var_specs_all[component]['stream']
+        stream_loc = var_specs_all[component]['stream']
+    else:
+        stream_loc = stream
 
     if clobber is None:
         clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
@@ -44,7 +46,7 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
     # get matching data_catalog entries
     entries = data_catalog.find_in_index(
         variable=_varnames_resolved(varnames, component), component=component,
-        stream=stream, experiment=experiment)
+        stream=stream_loc, experiment=experiment)
 
     # instantiate cluster, if not provided via argument
     # ignore dashboard warnings when instantiating
@@ -55,7 +57,7 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
     else:
         cluster = cluster_in
 
-    ds = xr.merge([tseries_get_var(varname, component, experiment, stream, freq, clobber, entries, cluster)
+    ds = xr.merge([tseries_get_var(varname, component, experiment, stream_loc, freq, cache_dir, clobber, entries, cluster)
                    for varname in varnames])
 
     # if cluster was instantiated here, close it
@@ -65,7 +67,7 @@ def tseries_get_vars(varnames, component, experiment, stream=None, freq='mon', c
 
     return ds
 
-def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clobber=None, entries_in=None, cluster_in=None):
+def tseries_get_var(varname, component, experiment, stream=None, freq='mon', cache_dir='tseries', clobber=None, entries_in=None, cluster_in=None):
     """
     return tseries for varname, as a xarray.Dataset object
     assumes that data_catalog.set_catalog has been called
@@ -74,7 +76,9 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
     if stream is None:
         with open(var_specs_fname, mode='r') as fptr:
             var_specs_all = yaml.safe_load(fptr)
-        stream = var_specs_all[component]['stream']
+        stream_loc = var_specs_all[component]['stream']
+    else:
+        stream_loc = stream
 
     if clobber is None:
         clobber = os.environ['CLOBBER'] == 'True' if 'CLOBBER' in os.environ else False
@@ -84,7 +88,7 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
     if entries_in is None:
         entries = data_catalog.find_in_index(
             variable=varname_resolved, component=component,
-            stream=stream, experiment=experiment)
+            stream=stream_loc, experiment=experiment)
     else:
         entries = entries_in.loc[entries_in['variable'] == varname_resolved]
 
@@ -94,7 +98,7 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
     # loop over matching ensembles
     paths = []
     for ensemble in entries.ensemble.unique():
-        path = _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, entries, cluster_in)
+        path = _tseries_gen_wrap(varname, component, experiment, ensemble, freq, cache_dir, clobber, entries, cluster_in)
         paths.append(path)
 
     # if there are multiple ensembles, concatenate over ensembles
@@ -102,15 +106,6 @@ def tseries_get_var(varname, component, experiment, stream=None, freq='mon', clo
     if len(paths) > 1:
         ds = xr.open_mfdataset(paths, decode_times=decode_times,
                                combine='nested', concat_dim='ensemble', data_vars=[varname])
-        # force ensemble dimension to be last dimension
-        # this make plotting more straightforward
-        tb_name = ds.time.attrs['bounds']
-        dims = list(ds[tb_name].dims)
-        for dim in ds.dims:
-            if dim != 'ensemble' and dim != 'region' and dim not in dims:
-                dims.append(dim)
-        dims.extend(['region', 'ensemble'])
-        ds = ds.transpose(*dims)
     else:
         ds = xr.open_dataset(paths[0], decode_times=decode_times)
 
@@ -133,7 +128,7 @@ def _varname_resolved(varname, component):
 
     return var_spec['varname'] if 'varname' in var_spec else varname
 
-def _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, entries, cluster_in=None):
+def _tseries_gen_wrap(varname, component, experiment, ensemble, freq, cache_dir, clobber, entries, cluster_in=None):
     """
     return path for file containing tseries for varname for a single ensemble member
         creating the file if necessary
@@ -142,7 +137,7 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, e
         msg = f'freq={freq} not implemented'
         raise NotImplementedError(msg)
 
-    tseries_path = os.path.join('tseries', tseries_fname(varname, component, experiment, ensemble, freq))
+    tseries_path = os.path.join(cache_dir, tseries_fname(varname, component, experiment, ensemble, freq))
     tseries_path_genlock = tseries_path + ".genlock"
     # if file doesn't exists and isn't being generated, generate it
     if clobber or (not os.path.exists(tseries_path) and not os.path.exists(tseries_path_genlock)):
@@ -154,14 +149,19 @@ def _tseries_gen_wrap(varname, component, experiment, ensemble, freq, clobber, e
                 ds = _tseries_gen(varname, component, ensemble, entries, cluster_in)
             if freq == 'ann':
                 mon_path = _tseries_gen_wrap(varname, component, experiment,
-                                             ensemble, 'mon', clobber, entries, cluster_in)
+                                             ensemble, 'mon', cache_dir, clobber, entries, cluster_in)
                 print_timestamp(f'computing ann means from mon means for {varname}')
                 ds = esmlab_wrap.compute_ann_mean(xr.open_dataset(mon_path))
         except:
             # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
             os.remove(tseries_path_genlock)
             raise
+
         # write generated timeseries
+        # ensure NaN _FillValues do not get generated
+        for var in ds.variables:
+            if '_FillValue' not in ds[var].encoding:
+                ds[var].encoding['_FillValue'] = None
         ds.to_netcdf(tseries_path, format='NETCDF4_CLASSIC')
         print_timestamp(f'{tseries_path} written')
 
@@ -295,7 +295,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             # change output units, if specified in var_spec
             units_key = 'integral_display_units' if tseries_op == 'integrate' else 'display_units'
             if units_key in var_spec:
-                conv_units(da_out, var_spec[units_key])
+                da_out = conv_units(da_out, var_spec[units_key])
                 print_timestamp('da_out units converted')
 
             ds_out = da_out.to_dataset()
@@ -318,7 +318,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             print_timestamp('copy_var_names added')
 
             # set ds_out.time to mid-interval values
-            time_set_mid(ds_out, time_name)
+            ds_out = time_set_mid(ds_out, time_name)
 
             print_timestamp('time_set_mid returned')
 
@@ -338,13 +338,10 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
                 if key in ds_encoding:
                     ds_out.encoding[key] = ds_encoding[key]
 
-            # ensure NaN _FillValues do not get generated when the file is written out
-            for var in ds_out.variables:
-                if '_FillValue' not in ds_out[var].encoding:
-                    ds_out[var].encoding['_FillValue'] = None
-
             # force computation of ds_out, while resources of client are still available
+            print_timestamp('calling ds_out.load')
             ds_out.load()
+            print_timestamp('returned from ds_out.load')
 
     print_timestamp('ds_in and client closed')
 

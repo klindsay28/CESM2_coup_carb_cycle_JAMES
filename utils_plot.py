@@ -14,7 +14,7 @@ def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     for ds_ind, ds in enumerate(ds_list):
-        varname_x = ds[varname].dims[0]
+        varname_x = next(dim for dim in ds[varname].dims if dim!='ensemble')
         da_x = ds[varname_x]
         if is_date(da_x):
             xvals = time_year_plus_frac(ds, varname_x)
@@ -25,10 +25,18 @@ def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_
         if xoffsets is not None:
             xvals = xvals.copy() + xoffsets[ds_ind]
         seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
-        yvals = ds[varname].sel(seldict).values
-        if yoffsets is not None:
-            yvals = yvals.copy() + yoffsets[ds_ind]
-        ax.plot(xvals, yvals, label=legend_list[ds_ind])
+
+        if 'ensemble' in ds[varname].dims:
+            for ensemble in range(ds.dims['ensemble']):
+                yvals = ds[varname].sel(seldict).isel(ensemble=ensemble).values
+                if yoffsets is not None:
+                    yvals = yvals.copy() + yoffsets[ds_ind]
+                ax.plot(xvals, yvals, label=f'{legend_list[ds_ind]}, #{ensemble+1}')
+        else:
+            yvals = ds[varname].sel(seldict).values
+            if yoffsets is not None:
+                yvals = yvals.copy() + yoffsets[ds_ind]
+            ax.plot(xvals, yvals, label=legend_list[ds_ind])
     ax.set_xlabel(xlabel)
     if ds[varname].attrs['units'] != '1':
         ax.set_ylabel(ds[varname].attrs['units'])
@@ -48,7 +56,7 @@ def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_nam
         fig, ax = plt.subplots(figsize=figsize)
     seldict = _seldict(ds, region_val, vdim_name, vdim_ind)
     for varname in varnames:
-        varname_x = ds[varname].dims[0]
+        varname_x = next(dim for dim in ds[varname].dims if dim!='ensemble')
         da_x = ds[varname_x]
         if is_date(da_x):
             xvals = time_year_plus_frac(ds, varname_x)
@@ -56,8 +64,9 @@ def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_nam
         else:
             xvals = da_x.values
             xlabel = f'{varname_x} ({da_x.attrs["units"]})' if 'units' in da_x.attrs else varname_x
-        if region_val is None:
-            ax.plot(xvals, ds[varname], label=varname)
+        if 'ensemble' in ds[varname].dims:
+            for ensemble in range(ds.dims['ensemble']):
+                ax.plot(xvals, ds[varname].sel(seldict).isel(ensemble=ensemble), label=f'{varname}, #{ensemble+1}')
         else:
             ax.plot(xvals, ds[varname].sel(seldict), label=varname)
     ax.set_xlabel(xlabel)
@@ -77,11 +86,14 @@ def plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), regi
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
+    seldict = _seldict(ds, region_val, vdim_name=None, vdim_ind=None)
     for varname_y in varnames_y:
-        if region_val is None:
-            ax.plot(ds[varname_x], ds[varname_y], label=varname_y)
+        if 'ensemble' in ds.dims:
+            for ensemble in range(ds.dims['ensemble']):
+                ax.plot(ds[varname_x].sel(seldict).isel(ensemble=ensemble), ds[varname_y].sel(seldict).isel(ensemble=ensemble),
+                        label=f'{varname_y}, #{ensemble+1}')
         else:
-            ax.plot(ds[varname_x].sel(region=region_val), ds[varname_y].sel(region=region_val), label=varname_y)
+            ax.plot(ds[varname_x].sel(seldict), ds[varname_y].sel(seldict), label=varname_y)
     ax.set_xlabel(varname_x + '(' + ds[varname_x].attrs['units'] + ')')
     if ds[varname_y].attrs['units'] != '1':
         ax.set_ylabel(ds[varname_y].attrs['units'])

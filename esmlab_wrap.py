@@ -5,14 +5,22 @@ using these wrappers eases adapting to API changes in esmlab
 """
 
 from datetime import datetime, timezone
+import warnings
 
-import esmlab
-import utils
+from esmlab import resample, anomaly
+from utils import time_set_mid
 
 def compute_ann_mean(ds):
     """esmlab wrapper"""
 #     return esmlab.climatology.compute_ann_mean(ds)
-    ds_out = esmlab.resample(ds, freq='ann')
+    # ignore certain warnings
+    with warnings.catch_warnings():
+        warnings.filterwarnings(action='ignore', module='.*nanops')
+        ds_out = resample(ds, freq='ann')
+
+    # esmlab appears to corrupt xarray indexes wrt time
+    # the following seems to reset them
+    ds_out['time'] = ds_out['time']
 
     # ensure time dim is first on time.bounds variable
     tb_name = ds_out.time.bounds
@@ -20,12 +28,7 @@ def compute_ann_mean(ds):
         ds_out[tb_name] = ds_out[tb_name].transpose()
 
     # reset time to midpoint
-    utils.time_set_mid(ds_out, 'time')
-
-    # ensure NaN _FillValues do not get generated when the file is written out
-    for var in ds_out.variables:
-        if '_FillValue' not in ds_out[var].encoding:
-            ds_out[var].encoding['_FillValue'] = None
+    ds_out = time_set_mid(ds_out, 'time')
 
     # propagate particular encoding values
     for key in ['unlimited_dims']:
@@ -51,7 +54,7 @@ def compute_ann_mean(ds):
 def compute_mon_anomaly(ds):
     """esmlab wrapper"""
 #     return esmlab.climatology.compute_mon_anomaly(ds)
-    ds_out = esmlab.anomaly(ds, clim_freq='mon')
+    ds_out = anomaly(ds, clim_freq='mon')
 
     # propagate particular encoding values
     for key in ['unlimited_dims']:

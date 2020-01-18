@@ -7,6 +7,11 @@ conda activate CESM2_coup_carb_cycle_JAMES
 cd esmlab_dev
 pip install -e .
 
+conda env remove --name CESM2_coup_carb_cycle_JAMES_tst
+conda env create -f conda-env.tst.yml
+conda activate CESM2_coup_carb_cycle_JAMES_tst
+
+
 intended workflow:
 
 1) generate data catalog of model output with ./build_catalog.py

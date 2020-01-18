@@ -27,8 +27,7 @@ def CAM_kg_to_dry_vmr(ds, mw):
     surf_area = ds['weight_sum']
 
     dry_mass_model = mult_w_units(CAM_dry_mass_model_avg(ds), surf_area)
-    moles_dair = div_w_units(dry_mass_model, CIME_shr_const('mwdair'))
-    conv_units(moles_dair, 'mol')
+    moles_dair = conv_units(div_w_units(dry_mass_model, CIME_shr_const('mwdair')), 'mol')
 
     g_per_kg = xr.DataArray(1.0e3, attrs={'units': 'g/kg'})
 

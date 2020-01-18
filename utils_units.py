@@ -15,19 +15,30 @@ def clean_units(units):
                     'unitless':'1',
                     'years':'common_years', 'yr':'common_year',
                     'meq':'mmol', 'neq':'nmol'}
-    units_split = re.split('( |\(|\)|\^|\*|/|-[0-9]+|[0-9]+)', units)
+    units_split = re.split(r'( |\(|\)|\^|\*|/|-[0-9]+|[0-9]+)', units)
     units_split_repl = \
         [replacements[token] if token in replacements else token for token in units_split]
     return ''.join(units_split_repl)
 
+def conv_units_np(values, units_in, units_out):
+    """
+    return a copy of numpy array values, with units converted from units_in to units_out
+    """
+    units_in_cf = cf_units.Unit(units_in)
+    units_out_cf = cf_units.Unit(clean_units(units_out))
+    return units_in_cf.convert(values, units_out_cf, inplace=False)
+
 def conv_units(da, units_out):
     """
-    convert units of da to units_out inplace
-    return modified da
+    return a copy of da, with units converted to units_out
     """
-    da.values = cf_units.Unit(da.attrs['units']).convert(da.values, cf_units.Unit(clean_units(units_out)))
-    da.attrs['units'] = units_out
-    return da
+    # use apply_ufunc to preserve dask-ness of da
+    func = lambda values: conv_units_np(values, da.attrs['units'], units_out)
+    da_out = xr.apply_ufunc(func, da, keep_attrs=True,
+                            dask='parallelized', output_dtypes=[da.dtype])
+    da_out.attrs['units'] = units_out
+    da_out.encoding = da.encoding
+    return da_out
 
 def mult_w_units(var_a, var_b):
     """
