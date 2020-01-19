@@ -179,7 +179,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     """
     generate a tseries for a particular ensemble member, return a Dataset object
     """
-    print_timestamp(f'entering _tseries_gen for {varname}')
+    print_timestamp(f'varname={varname}')
     varname_resolved = _varname_resolved(varname, component)
     fnames = entries.loc[entries['ensemble'] == ensemble].files.tolist()
     print(fnames)
@@ -230,7 +230,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     workers = 2 * round(workers/2) # round to nearest multiple of 2
     cluster.scale(workers)
 
-    print(cluster.dashboard_link)
+    print_timestamp(f'dashboard_link={cluster.dashboard_link}')
 
     # create dask distributed client, connecting to workers
     with dask.distributed.Client(cluster) as client:

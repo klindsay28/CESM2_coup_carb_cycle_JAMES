@@ -1,6 +1,7 @@
 """utility functions"""
 
 from datetime import datetime
+import inspect
 
 import dask
 
@@ -10,7 +11,7 @@ import numpy as np
 import xarray as xr
 
 def print_timestamp(msg):
-    print(':'.join([str(datetime.now()), msg]))
+    print(f'{str(datetime.now())}({inspect.stack()[1][3]}):{msg}')
 
 def is_date(da):
     """
