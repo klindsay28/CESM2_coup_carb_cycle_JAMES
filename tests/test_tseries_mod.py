@@ -22,6 +22,7 @@ os.makedirs(cache_dir_test, exist_ok=True)
     (['FG_CO2', 'ATM_CO2'], 'ocn', 'esm-hist-cmip5', None),
     (['FG_CO2', 'ATM_CO2'], 'ocn', 'esm-hist', None),
 ])
+@pytest.mark.campaign_required
 def test_tseries_get_vars(varnames, component, experiment, stream):
     ds_base = tseries_get_vars(varnames, component, experiment,
                                stream=stream, freq='ann')
