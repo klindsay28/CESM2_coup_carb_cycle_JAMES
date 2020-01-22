@@ -4,10 +4,9 @@ import pytest
 import xarray as xr
 import numpy as np
 
-from utils_units import clean_units, conv_units
-from utils_test import dict_skip_keys
-
-from xr_ds_ex import xr_ds_ex
+from src.utils_units import clean_units, conv_units
+from src.utils_test import dict_skip_keys
+from src.xr_ds_ex import xr_ds_ex
 
 nyrs = 3
 var_const = False

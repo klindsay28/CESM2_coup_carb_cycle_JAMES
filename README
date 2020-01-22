@@ -4,13 +4,12 @@ coupled carbon cycle in CESM2
 conda env remove --name CESM2_coup_carb_cycle_JAMES
 conda env create -f conda-env.yml
 conda activate CESM2_coup_carb_cycle_JAMES
-cd esmlab_dev
-pip install -e .
+python -m pip install -e .
 
 conda env remove --name CESM2_coup_carb_cycle_JAMES_tst
 conda env create -f conda-env.tst.yml
 conda activate CESM2_coup_carb_cycle_JAMES_tst
-
+python -m pip install -e .
 
 intended workflow:
 

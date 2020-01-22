@@ -7,10 +7,10 @@ import cftime
 import numpy as np
 import numpy.matlib as npm
 
-from esmlab_wrap import compute_ann_mean
-from utils import time_year_plus_frac
-from xr_ds_ex import xr_ds_ex
-from utils_test import dict_skip_keys, ds_identical_skip_attr_list
+from src.esmlab_wrap import compute_ann_mean
+from src.utils import time_year_plus_frac
+from src.xr_ds_ex import xr_ds_ex
+from src.utils_test import dict_skip_keys, ds_identical_skip_attr_list
 
 nyrs = 3
 

@@ -1,6 +1,6 @@
 #!/bin/bash -i
 
-conda activate CESM2_coup_carb_cycle_JAMES_tst
+conda activate CESM2_coup_carb_cycle_JAMES
 
 cmdname=$0
 
@@ -25,4 +25,5 @@ while [ $# -gt 0 ] ; do
 done
 
 echo pytest_opts=$pytest_opts
-python -m pytest $pytest_opts tests
+
+pytest $pytest_opts tests

@@ -5,13 +5,14 @@ import os
 import pytest
 import xarray as xr
 
-import data_catalog
-from tseries_mod import tseries_get_vars
-from utils_test import dict_skip_keys, ds_identical_skip_attr_list
+from src import data_catalog
+from src.config import rootdir
+from src.tseries_mod import tseries_get_vars
+from src.utils_test import dict_skip_keys, ds_identical_skip_attr_list
 
 data_catalog.set_catalog('experiments')
 
-cache_dir_test = 'tseries_test'
+cache_dir_test = os.path.join(rootdir, 'tseries_test')
 os.makedirs(cache_dir_test, exist_ok=True)
 
 @pytest.mark.parametrize('varnames, component, experiment, stream', [
@@ -22,8 +23,20 @@ os.makedirs(cache_dir_test, exist_ok=True)
     (['FG_CO2', 'ATM_CO2'], 'ocn', 'esm-hist-cmip5', None),
     (['FG_CO2', 'ATM_CO2'], 'ocn', 'esm-hist', None),
 ])
+def test_tseries_get_vars_cached(varnames, component, experiment, stream):
+    ds_base = tseries_get_vars(varnames, component, experiment,
+                               stream=stream, freq='ann')
+
+@pytest.mark.parametrize('varnames, component, experiment, stream', [
+    (['SFCO2_OCN'], 'atm', 'esm-hist-cmip5', 'cam2.h0'),
+    (['SFCO2_OCN'], 'atm', 'esm-hist', None),
+    (['TOTECOSYSC', 'NBP'], 'lnd', 'esm-hist-cmip5', None),
+    (['TOTECOSYSC', 'NBP'], 'lnd', 'esm-hist', None),
+    (['FG_CO2', 'ATM_CO2'], 'ocn', 'esm-hist-cmip5', None),
+    (['FG_CO2', 'ATM_CO2'], 'ocn', 'esm-hist', None),
+])
 @pytest.mark.campaign_required
-def test_tseries_get_vars(varnames, component, experiment, stream):
+def test_tseries_get_vars_gen(varnames, component, experiment, stream):
     ds_base = tseries_get_vars(varnames, component, experiment,
                                stream=stream, freq='ann')
     ds_test = tseries_get_vars(varnames, component, experiment,

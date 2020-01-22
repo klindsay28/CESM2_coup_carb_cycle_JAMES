@@ -5,8 +5,8 @@ import cftime
 import numpy as np
 import numpy.matlib as npm
 
-from xr_ds_ex import xr_ds_ex, gen_time_bounds_values
-from utils import time_year_plus_frac, time_set_mid, repl_coord, da_w_lags
+from src.xr_ds_ex import xr_ds_ex, gen_time_bounds_values
+from src.utils import time_year_plus_frac, time_set_mid, repl_coord, da_w_lags
 
 nyrs = 3
 var_const = False
