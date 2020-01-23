@@ -1,11 +1,13 @@
 Scripts for analysis and figures related to paper documenting
 coupled carbon cycle in CESM2
 
+conda activate base
 conda env remove --name CESM2_coup_carb_cycle_JAMES
 conda env create -f conda-env.yml
 conda activate CESM2_coup_carb_cycle_JAMES
 python -m pip install -e .
 
+conda activate base
 conda env remove --name CESM2_coup_carb_cycle_JAMES_tst
 conda env create -f conda-env.tst.yml
 conda activate CESM2_coup_carb_cycle_JAMES_tst

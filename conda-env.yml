@@ -19,6 +19,7 @@ dependencies:
 # serialization
 - netcdf4
 # Misc
+- black
 - cf_units
 - cftime=1.0.3.4
 - nc-time-axis
