@@ -2,9 +2,25 @@
 utility functions related to plotting
 """
 
+import os
+
 import matplotlib.pyplot as plt
 
 from src.utils import is_date, time_year_plus_frac
+from src.config import rootdir
+
+def _fig_fname_resolved(fname):
+    """
+    Given a relative filename fname, return full path for a figure.
+    The directory containing the returned path is created, if it doesn't already exist.
+    """
+    if 'TESTMODE' in os.environ and os.environ['TESTMODE'] == 'True':
+        figdir_relative = 'figures_test'
+    else:
+        figdir_relative = 'figures'
+    figdir_abs = os.path.join(rootdir, figdir_relative)
+    os.makedirs(figdir_abs, exist_ok=True)
+    return os.path.join(figdir_abs, fname)
 
 def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None, ax=None, xoffsets=None, yoffsets=None):
     """
@@ -44,7 +60,7 @@ def plot_1var(varname, ds_list, legend_list, title=None, figsize=(10,6), region_
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(fname, dpi=600, metadata={'CreationDate': None})
+        plt.savefig(_fig_fname_resolved(fname), dpi=600, metadata={'CreationDate': None})
     return ax
 
 def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_name=None, vdim_ind=None, fname=None, ax=None):
@@ -76,7 +92,7 @@ def plot_1ds(ds, varnames, title=None, figsize=(10,6), region_val=None, vdim_nam
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(fname, dpi=600, metadata={'CreationDate': None})
+        plt.savefig(_fig_fname_resolved(fname), dpi=600, metadata={'CreationDate': None})
     return ax
 
 def plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), region_val=None, fname=None, ax=None):
@@ -101,7 +117,7 @@ def plot_vars_vs_var(ds, varname_x, varnames_y, title=None, figsize=(10,6), regi
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(fname, dpi=600, metadata={'CreationDate': None})
+        plt.savefig(_fig_fname_resolved(fname), dpi=600, metadata={'CreationDate': None})
     return ax
 
 def _seldict(ds, region_val, vdim_name, vdim_ind):
