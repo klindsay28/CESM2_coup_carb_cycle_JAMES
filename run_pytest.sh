@@ -15,7 +15,9 @@ while [ $# -gt 0 ] ; do
                 echo campaign not available, --run_campaign_required ignored
             fi
             ;;
-        
+        -s)
+            pytest_opts="$pytest_opts -s"
+            ;;
         *)
             echo $cmdname: unknown option $1
             exit 1
