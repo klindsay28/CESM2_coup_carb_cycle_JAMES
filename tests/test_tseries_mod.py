@@ -38,6 +38,7 @@ def test_tseries_get_vars_cached(varnames, component, experiment, stream):
     [
         (["SFCO2_OCN"], "atm", "esm-hist-cmip5", "cam2.h0"),
         (["SFCO2_OCN"], "atm", "esm-hist", None),
+        (["SFCO2_OCN"], "atm", "esm-piControl", None),
         (["TOTECOSYSC", "NBP"], "lnd", "esm-hist-cmip5", None),
         (["TOTECOSYSC", "NBP"], "lnd", "esm-hist", None),
         (["FG_CO2", "ATM_CO2"], "ocn", "esm-hist-cmip5", None),

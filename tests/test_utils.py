@@ -8,7 +8,7 @@ import numpy.matlib as npm
 from src.xr_ds_ex import xr_ds_ex, gen_time_bounds_values
 from src.utils import time_year_plus_frac, time_set_mid, repl_coord, da_w_lags
 
-nyrs = 3
+nyrs = 300
 var_const = False
 
 

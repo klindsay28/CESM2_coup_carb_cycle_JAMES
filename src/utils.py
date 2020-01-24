@@ -88,10 +88,18 @@ def time_set_mid(ds, time_name, deep=False):
 
     # Use da = da.copy(data=...), in order to preserve attributes and encoding.
 
-    # If tb is dask array of datetime objects then apply compute before applying mean.
-    # Do this because mean is not implemented for dask arrays of datetime objects.
-    if isinstance(tb.data, dask.array.Array) and tb.dtype == np.dtype("O"):
-        ds_out[time_name] = ds[time_name].copy(data=tb.compute().mean(bounds_dim))
+    # If tb is an array of datetime objects then encode time before averaging.
+    # Do this because computing the mean on datetime objects with xarray fails
+    # if the time span is 293 or more years.
+    #     https://github.com/klindsay28/CESM2_coup_carb_cycle_JAMES/issues/7
+    if tb.dtype == np.dtype("O"):
+        units = "days since 0001-01-01"
+        calendar = "noleap"
+        tb_vals = cftime.date2num(ds[tb_name].values, units=units, calendar=calendar)
+        tb_mid_decode = cftime.num2date(
+            tb_vals.mean(axis=1), units=units, calendar=calendar
+        )
+        ds_out[time_name] = ds[time_name].copy(data=tb_mid_decode)
     else:
         ds_out[time_name] = ds[time_name].copy(data=tb.mean(bounds_dim))
 
