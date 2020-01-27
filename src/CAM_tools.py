@@ -23,10 +23,10 @@ def CAM_dry_mass_model_avg(ds):
     return mass_model
 
 
-def CAM_kg_to_dry_vmr(ds, mw):
-    """compute conversion factor going from kg to dry vmr"""
+def CAM_kg_to_dry_vmr(ds, varname, mw):
+    """compute conversion factor going from kg of varname to dry vmr"""
 
-    surf_area = ds["weight_sum"]
+    surf_area = ds[f"weight_sum_{varname}"]
 
     dry_mass_model = mult_w_units(CAM_dry_mass_model_avg(ds), surf_area)
     moles_dair = conv_units(

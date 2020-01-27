@@ -23,8 +23,8 @@ os.makedirs(cache_dir_test, exist_ok=True)
         (["SFCO2_OCN"], "atm", "esm-hist", None),
         (["TOTECOSYSC", "NBP"], "lnd", "esm-hist-cmip5", None),
         (["TOTECOSYSC", "NBP"], "lnd", "esm-hist", None),
-        (["FG_CO2", "ATM_CO2"], "ocn", "esm-hist-cmip5", None),
-        (["FG_CO2", "ATM_CO2"], "ocn", "esm-hist", None),
+        (["FG_CO2", "POC_FLUX_100m"], "ocn", "esm-hist-cmip5", None),
+        (["FG_CO2", "POC_FLUX_100m"], "ocn", "esm-hist", None),
     ],
 )
 def test_tseries_get_vars_cached(varnames, component, experiment, stream):
@@ -41,8 +41,8 @@ def test_tseries_get_vars_cached(varnames, component, experiment, stream):
         (["SFCO2_OCN"], "atm", "esm-piControl", None),
         (["TOTECOSYSC", "NBP"], "lnd", "esm-hist-cmip5", None),
         (["TOTECOSYSC", "NBP"], "lnd", "esm-hist", None),
-        (["FG_CO2", "ATM_CO2"], "ocn", "esm-hist-cmip5", None),
-        (["FG_CO2", "ATM_CO2"], "ocn", "esm-hist", None),
+        (["FG_CO2", "POC_FLUX_100m"], "ocn", "esm-hist-cmip5", None),
+        (["FG_CO2", "POC_FLUX_100m"], "ocn", "esm-hist", None),
     ],
 )
 @pytest.mark.campaign_required

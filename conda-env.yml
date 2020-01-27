@@ -14,6 +14,7 @@ dependencies:
 - bottleneck
 - jupyterlab
 - jupyter_contrib_nbextensions
+- jupyter-server-proxy
 - matplotlib
 - xarray=0.14.*
 # serialization

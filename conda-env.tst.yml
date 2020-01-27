@@ -14,11 +14,13 @@ dependencies:
 - bottleneck
 - jupyterlab
 - jupyter_contrib_nbextensions
+- jupyter-server-proxy
 - matplotlib
 - xarray=0.14.*
 # serialization
 - netcdf4
 # Misc
+- black
 - cf_units
 - cftime=1.0.3.4
 - nc-time-axis

@@ -303,7 +303,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
         rank = len(vardims)
         vertlen = ds0.dims[vardims[1]] if rank > 3 else 1
         tlen = ds0.dims[time_name] * len(fnames)
-        time_chunksize = 10 * 12 if rank < 4 else 2
+        time_chunksize = 10 * 12 if rank < 4 else 12
         ds0.chunk(chunks={time_name: time_chunksize})
         time_encoding = ds0[time_name].encoding
         var_encoding = ds0[varname_resolved].encoding
@@ -324,6 +324,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     workers += math.log2(vertlen)
     workers *= 4
     workers = 2 * round(workers / 2)  # round to nearest multiple of 2
+    print_timestamp(f"calling cluster.scale({workers})")
     cluster.scale(workers)
 
     print_timestamp(f"dashboard_link={cluster.dashboard_link}")
@@ -412,9 +413,14 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             print_timestamp("ds_out generated")
 
             # add regional sum of weights
-            weight_sum = weight.sum(dim=reduce_dims)
-            weight_sum.name = "weight_sum"
-            weight_sum.attrs["long_name"] = "sum of weights used in tseries generation"
+            da_in_t0 = da_in.isel(time=0)
+            ones_masked_t0 = xr.ones_like(da_in_t0).where(da_in_t0.notnull())
+            weight_sum = (ones_masked_t0 * weight).sum(dim=reduce_dims)
+            weight_sum.name = f"weight_sum_{varname}"
+            weight_sum.attrs = weight.attrs
+            weight_sum.attrs[
+                "long_name"
+            ] = f"sum of weights used in tseries generation for {varname}"
             ds_out = xr.merge([ds_out, weight_sum])
 
             # copy particular variables from ds_in
