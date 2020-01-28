@@ -6,7 +6,7 @@ import numpy as np
 import numpy.matlib as npm
 
 from src.xr_ds_ex import xr_ds_ex, gen_time_bounds_values
-from src.utils import time_year_plus_frac, time_set_mid, repl_coord, da_w_lags
+from src.utils import time_year_plus_frac, time_set_mid, repl_coord, da_w_lags, smooth
 
 nyrs = 300
 var_const = False
@@ -42,7 +42,7 @@ def test_repl_coord(decode_times1, decode_times2, apply_chunk1):
 @pytest.mark.parametrize("deep", [True, False])
 @pytest.mark.parametrize("apply_chunk", [True, False])
 def test_time_set_mid(decode_times, deep, apply_chunk):
-    ds = xr_ds_ex(decode_times, nyrs=nyrs, var_const=var_const)
+    ds = xr_ds_ex(decode_times, nyrs=nyrs, var_const=var_const, time_mid=False)
     if apply_chunk:
         ds = ds.chunk({"time": 12})
 
@@ -72,7 +72,9 @@ def test_time_set_mid(decode_times, deep, apply_chunk):
             assert (ds_out[varname].data is ds[varname].data) == (not deep)
 
     # verify that values are independent of ds being chunked in time
-    ds_chunk = xr_ds_ex(decode_times, nyrs=nyrs, var_const=var_const).chunk({"time": 6})
+    ds_chunk = xr_ds_ex(
+        decode_times, nyrs=nyrs, var_const=var_const, time_mid=False
+    ).chunk({"time": 6})
     ds_chunk_out = time_set_mid(ds_chunk, "time")
     assert ds_chunk_out.identical(ds_out)
 
@@ -110,3 +112,30 @@ def test_da_w_lags(decode_times, add_encoding_var):
     assert np.all(
         da2.isel(time=itime).values == da.isel(time=itime + np.array(lag_values))
     )
+
+
+@pytest.mark.parametrize("decode_times", [True, False])
+@pytest.mark.parametrize("apply_chunk", [True, False])
+@pytest.mark.parametrize("add_encoding_var", [True, False])
+def test_smooth(decode_times, apply_chunk, add_encoding_var):
+    ds = xr_ds_ex(decode_times, nyrs=nyrs, var_const=True)
+    if apply_chunk:
+        ds = ds.chunk({"time": 12})
+    da = ds["var_ex"]
+    if add_encoding_var:
+        da.encoding["_FillValue"] = 1.0e30
+    da_smooth = smooth(da, 13)
+
+    # verify shape, dims, attrs, and encoding of smooth output
+    assert da_smooth.shape == da.shape
+    assert da_smooth.dims == da.dims
+    assert da_smooth.attrs == da.attrs
+    assert da_smooth.encoding == da.encoding
+#     assert da_smooth.chunks == da.chunks
+
+    # verify that non-na values are close to original values
+    # this is the case because var_const=True
+    assert np.all(np.isclose(da_smooth.fillna(da).values, da.values))
+
+    # verify proper number of fill values for each lag
+    assert da_smooth.isnull().sum("time") == 12

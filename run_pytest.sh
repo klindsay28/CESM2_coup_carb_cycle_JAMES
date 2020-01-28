@@ -5,7 +5,7 @@ conda activate CESM2_coup_carb_cycle_JAMES
 cmdname=$0
 
 # parse command line arguments
-pytest_opts=-rs
+pytest_opts="-rs -vv"
 while [ $# -gt 0 ] ; do
     case "$1" in
         --run_campaign_required)

@@ -5,22 +5,26 @@ import numpy as np
 import numpy.matlib as npm
 import xarray as xr
 
+days_1yr = np.array(
+    [31.0, 28.0, 31.0, 30.0, 31.0, 30.0, 31.0, 31.0, 30.0, 31.0, 30.0, 31.0]
+)
+
 
 def gen_time_bounds_values(nyrs=3):
     """return numpy array of values of month boundaries"""
-    days_1yr = np.array(
-        [31.0, 28.0, 31.0, 30.0, 31.0, 30.0, 31.0, 31.0, 30.0, 31.0, 30.0, 31.0]
-    )
-    time_edges = np.insert(np.cumsum(npm.repmat(days_1yr, nyrs, 1)), 0, 0)
+    time_edges = np.insert(np.cumsum(npm.repmat(days_1yr, 1, nyrs)), 0, 0)
     return np.stack((time_edges[:-1], time_edges[1:]), axis=1)
 
 
-def xr_ds_ex(decode_times=True, nyrs=3, var_const=True):
+def xr_ds_ex(decode_times=True, nyrs=3, var_const=True, time_mid=True):
     """return an example xarray.Dataset object, useful for testing functions"""
 
     # set up values for Dataset, nyrs yrs of analytic monthly values
     time_bounds_values = gen_time_bounds_values(nyrs)
-    time_values = 0.25 * time_bounds_values[:, 0] + 0.75 * time_bounds_values[:, 1]
+    if time_mid:
+        time_values = 0.5 * time_bounds_values[:, 0] + 0.5 * time_bounds_values[:, 1]
+    else:
+        time_values = 0.25 * time_bounds_values[:, 0] + 0.75 * time_bounds_values[:, 1]
     time_values_yr = time_values / 365.0
     if var_const:
         var_values = np.ones_like(time_values_yr)
@@ -55,7 +59,13 @@ def xr_ds_ex(decode_times=True, nyrs=3, var_const=True):
         var_values, name="var_ex", dims="time", coords={"time": time_var}
     )
     ds = var.to_dataset()
-    ds = xr.merge([ds, time_bounds])
+    days_in_month = xr.DataArray(
+        npm.repmat(days_1yr, 1, nyrs).squeeze(),
+        name="days_in_month",
+        dims="time",
+        coords={"time": time_var},
+    )
+    ds = xr.merge([ds, time_bounds, days_in_month])
 
     if decode_times:
         ds.time.encoding["units"] = time_units
