@@ -151,18 +151,11 @@ def smooth_1d_np(vals, filter_len=10 * 12, ret_edge_len=False):
 
 def smooth(da, filter_len=10 * 12, ret_edge_len=False):
     """apply smooth_1d_np to da values along leading dimension of da"""
-    da_out = da.copy()
-    if len(da_out.dims) == 1:
-        da_out.values, smooth_edge_len = smooth_1d_np(
-            da_out.values, filter_len, ret_edge_len=True
-        )
-    else:
-        da_stack = da_out.stack(stackdim=da_out.dims[1:])
-        for stackdim_ind in range(da_stack.shape[-1]):
-            da_stack.values[:, stackdim_ind], smooth_edge_len = smooth_1d_np(
-                da_stack.values[:, stackdim_ind], filter_len, ret_edge_len=True
-            )
+    dimname = da.dims[0]
+    da_out = da.rolling(dim={dimname: filter_len}, center=True).mean()
+    da_out.encoding = da.encoding
     if ret_edge_len:
+        smooth_edge_len = filter_len // 2 if filter_len % 2 == 0 else (filter_len - 1) // 2
         return da_out, smooth_edge_len
     else:
         return da_out
