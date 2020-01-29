@@ -4,9 +4,17 @@ import pytest
 import cftime
 import numpy as np
 import numpy.matlib as npm
+import xarray as xr
 
 from src.xr_ds_ex import xr_ds_ex, gen_time_bounds_values
-from src.utils import time_year_plus_frac, time_set_mid, repl_coord, da_w_lags, smooth
+from src.utils import (
+    time_year_plus_frac,
+    time_set_mid,
+    repl_coord,
+    da_w_lags,
+    smooth,
+    regression_slope,
+)
 
 nyrs = 300
 var_const = False
@@ -146,3 +154,20 @@ def test_smooth(decode_times, apply_chunk, add_encoding_var, add_dim, filter_len
     # verify proper number of fill values
     nan_cnt = filter_len - (filter_len % 2)
     assert np.all(da_smooth.load().isnull().sum("time").values == nan_cnt)
+
+
+def test_regression_slope():
+    ds = xr_ds_ex(decode_times=True, nyrs=nyrs, var_const=False)
+    da_1d = ds["var_ex"]
+
+    x_vals = np.linspace(0.0, 1.0, 3)
+    x = xr.DataArray(x_vals, dims=("x"), coords={"x": x_vals})
+    y_vals = np.linspace(1.0, 2.0, 5)
+    y = xr.DataArray(y_vals, dims=("y"), coords={"y": y_vals})
+    expected_slope = x * y
+    offset = x + y
+
+    da_nd = expected_slope * da_1d + offset
+
+    slope = regression_slope(da_1d, da_nd)
+    assert np.all(np.isclose(slope.values, expected_slope.values))

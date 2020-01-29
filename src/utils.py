@@ -3,12 +3,11 @@
 from datetime import datetime
 import inspect
 
-import dask
-
 import cftime
 import cf_units
 import numpy as np
 import xarray as xr
+from numpy.polynomial import polynomial
 
 
 def print_timestamp(msg):
@@ -62,11 +61,9 @@ def copy_fill_settings(da_in, da_out):
 def dim_cnt_check(ds, varname, dim_cnt):
     """confirm that varname in ds has dim_cnt dimensions"""
     if len(ds[varname].dims) != dim_cnt:
-        msg_full = "unexpected dim_cnt=%d, varname=%s" % (
-            len(ds[varname].dims),
-            varname,
+        raise ValueError(
+            f"unexpected dim_cnt={len(ds[varname].dims)}, varname={varname}"
         )
-        raise ValueError(msg_full)
 
 
 def time_set_mid(ds, time_name, deep=False):
@@ -189,6 +186,56 @@ def da_w_lags(da, lag_values=range(-36, 37)):
     da_out = da.expand_dims(dim={"lag": lag_values}).copy()
     for lag_ind, lag_val in enumerate(lag_values):
         da_out.values[lag_ind, :] = da.shift({dimname: -lag_val}).values
+    return da_out
+
+
+def regression_slope_np_1d_2d(vals_x, vals_y):
+    """
+    compute regression coefficient between vals_x and vals_y
+    regression is performed along leading dimension of the vals_x
+    """
+    if len(vals_x.shape) > 1:
+        raise ValueError("vals_x has too many dims")
+    if len(vals_y.shape) > 2:
+        raise ValueError("vals_y has too many dims")
+    if vals_y.shape[0] == vals_x.shape[0]:
+        return polynomial.polyfit(vals_x, vals_y, 1)[1, :]
+    if (len(vals_y.shape) == 2) and (vals_y.shape[1] == vals_x.shape[0]):
+        return polynomial.polyfit(vals_x, vals_y.T, 1)[1, :]
+    raise ValueError(
+        f"vals_y.shape={vals_y.shape} not conformable to vals_x.shape={vals_x.shape}"
+    )
+
+
+def regression_slope(da_1d, da_nd):
+    """
+    compute regression coefficient between da_1d and da_nd
+    regression is performed along leading dimension of the da_1d
+    """
+    if len(da_1d.dims) > 1:
+        raise ValueError("da_1d has too many dims")
+    dimname = da_1d.dims[0]
+    if dimname not in da_nd.dims:
+        raise ValueError("dim of da_1d ({dimname}) not a dim of da_nd")
+    otherdims = [dim for dim in da_nd.dims if dim != dimname]
+    da_nd_stack = da_nd.stack(stackdim=otherdims)
+    da_out_stack = xr.apply_ufunc(
+        regression_slope_np_1d_2d,
+        da_1d,
+        da_nd_stack,
+        input_core_dims=[[dimname], [dimname]],
+        output_core_dims=[[]],
+        exclude_dims=set((dimname,)),
+        dask="parallelized",
+        output_dtypes=[da_1d.dtype],
+    )
+    da_out = da_out_stack.unstack()
+    if "units" in da_nd.attrs and "units" in da_1d.attrs:
+        da_out.attrs["units"] = f"({da_nd.attrs['units']})/({da_1d.attrs['units']})"
+    da_out.attrs[
+        "long_name"
+    ] = f"regression slope between {da_1d.name} and {da_nd.name}"
+    da_out.name = "regression_slope"
     return da_out
 
 
