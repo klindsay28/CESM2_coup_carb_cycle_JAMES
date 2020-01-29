@@ -118,28 +118,31 @@ def test_da_w_lags(decode_times, add_encoding_var):
 @pytest.mark.parametrize("apply_chunk", [True, False])
 @pytest.mark.parametrize("add_encoding_var", [True, False])
 @pytest.mark.parametrize("add_dim", [True, False])
-def test_smooth(decode_times, apply_chunk, add_encoding_var, add_dim):
+@pytest.mark.parametrize("filter_len", [12, 13])
+def test_smooth(decode_times, apply_chunk, add_encoding_var, add_dim, filter_len):
     ds = xr_ds_ex(decode_times, nyrs=nyrs, var_const=True)
     if apply_chunk:
         ds = ds.chunk({"time": 12})
     da = ds["var_ex"]
     if add_dim:
-        da = da.expand_dims(dim={'dim2': 2}, axis=-1)
+        da = da.expand_dims(dim={"dim2": 2}, axis=-1)
     if add_encoding_var:
         da.encoding["_FillValue"] = 1.0e30
-    da_smooth = smooth(da, 13)
+    da_smooth = smooth(da, filter_len)
 
     # verify shape, dims, attrs, and encoding of smooth output
     assert da_smooth.shape == da.shape
     assert da_smooth.dims == da.dims
     assert da_smooth.attrs == da.attrs
     assert da_smooth.encoding == da.encoding
-    assert da_smooth.chunks == da.chunks
+    # chunks are not preserved if da is chunked and filter_len % 2 == 0
+    if not apply_chunk or filter_len % 2 == 1:
+        assert da_smooth.chunks == da.chunks
 
     # verify that non-na values are close to original values
     # this is the case because var_const=True
     assert np.all(np.isclose(da_smooth.fillna(da).values, da.values))
 
-    # verify proper number of fill values for each lag
-    print(da_smooth.load().isnull().sum("time"))
-    assert np.all(da_smooth.load().isnull().sum("time").values == 12)
+    # verify proper number of fill values
+    nan_cnt = filter_len - (filter_len % 2)
+    assert np.all(da_smooth.load().isnull().sum("time").values == nan_cnt)

@@ -153,9 +153,13 @@ def smooth(da, filter_len=10 * 12, ret_edge_len=False):
     """apply smooth_1d_np to da values along leading dimension of da"""
     dimname = da.dims[0]
     da_out = da.rolling(dim={dimname: filter_len}, center=True).mean()
+    if filter_len % 2 == 0:
+        da_out = 0.5 * (da_out + da_out.shift({dimname: -1}))
     da_out.encoding = da.encoding
     if ret_edge_len:
-        smooth_edge_len = filter_len // 2 if filter_len % 2 == 0 else (filter_len - 1) // 2
+        smooth_edge_len = (
+            filter_len // 2 if filter_len % 2 == 0 else (filter_len - 1) // 2
+        )
         return da_out, smooth_edge_len
     else:
         return da_out
