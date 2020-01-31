@@ -40,7 +40,7 @@ def test_compute_ann_mean(decode_times, add_encoding_var, unlimited_dim, var_con
 
     # verify dims, attrs, and encoding are preserved for all variables
     for varname in ds.variables:
-        assert ds_out[varname].dims == ds_out[varname].dims
+        assert ds_out[varname].dims == ds[varname].dims
         assert ds_out[varname].attrs == ds[varname].attrs
         assert ds_out[varname].encoding == ds[varname].encoding
 
