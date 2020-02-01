@@ -336,7 +336,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
         # tool to help track down file inconsistencies that trigger errors in open_mfdataset
         # test_open_mfdataset(fnames, time_chunksize, varname)
 
-        # data_vars = 'minimal', to avoid introducing time dimension to time-invariant fields when there are multiple files
+        # data_vars = "minimal", to avoid introducing time dimension to time-invariant fields when there are multiple files
         # only chunk in time, because if you chunk over spatial dims, then sum results depend on chunksize
         #     https://github.com/pydata/xarray/issues/2902
         with xr.open_mfdataset(
@@ -519,8 +519,8 @@ def get_area(ds, component):
             4.0 * CIME_shr_const("pi") * CIME_shr_const("rearth") ** 2
         )  # area of earth in CIME [m2]
 
-        # normalize area so that sum over 'lat', 'lon' yields area_earth
-        area = ds["gw"] + 0.0 * ds["lon"]  # add 'lon' dimension
+        # normalize area so that sum over "lat", "lon" yields area_earth
+        area = ds["gw"] + 0.0 * ds["lon"]  # add "lon" dimension
         area = (area_earth / area.sum(dim=("lat", "lon"))) * area
         area.attrs["units"] = "m2"
         return area
@@ -579,12 +579,54 @@ def get_rmask(ds, component):
     if component == "lnd":
         dim_cnt_check(ds, "landfrac", 2)
         lateral_dims = ds["landfrac"].dims
+        lat = ds["lat"].load()
+        lon = ds["lon"].load()
         rmask_od["Global"] = xr.where(ds["landfrac"] > 0, 1.0, 0.0)
-    #         lat = ds['lat'].load()
-    #         lon = ds['lon'].load()
-    #         rmask_od['CentralAfrica'] = xr.where((ds['landfrac'] > 0)
-    #                                              & (lat >= -5.0) & (lat < 5.0)
-    #                                              & (lon >= 0.0) & (lon < 30.0), 1.0, 0.0)
+        rmask_od["CentralAfrica"] = xr.where(
+            (ds["landfrac"] > 0)
+            & (lat >= -10.0)
+            & (lat < 10.0)
+            & (lon >= 0.0)
+            & (lon < 55.0),
+            1.0,
+            0.0,
+        )
+        rmask_od["MaritimeContinent"] = xr.where(
+            (ds["landfrac"] > 0)
+            & (lat >= -11.0)
+            & (lat < 8.0)
+            & (lon >= 90.0)
+            & (lon < 160.0),
+            1.0,
+            0.0,
+        )
+        rmask_od["Australia"] = xr.where(
+            (ds["landfrac"] > 0)
+            & (lat >= -45.0)
+            & (lat < -11.0)
+            & (lon >= 110.0)
+            & (lon < 160.0),
+            1.0,
+            0.0,
+        )
+        rmask_od["TropSAmer"] = xr.where(
+            (ds["landfrac"] > 0)
+            & (lat >= -15.0)
+            & (lat < 15.0)
+            & (lon >= 278.0)
+            & (lon < 330.0),
+            1.0,
+            0.0,
+        )
+        rmask_od["SSAmer"] = xr.where(
+            (ds["landfrac"] > 0)
+            & (lat >= -60.0)
+            & (lat < -15.0)
+            & (lon >= 278.0)
+            & (lon < 330.0),
+            1.0,
+            0.0,
+        )
     if component == "atm":
         dim_cnt_check(ds, "gw", 1)
         lateral_dims = ("lat", "lon")
