@@ -231,7 +231,8 @@ def regression_slope(da_1d, da_nd):
     )
     da_out = da_out_stack.unstack()
     if "units" in da_nd.attrs and "units" in da_1d.attrs:
-        da_out.attrs["units"] = f"({da_nd.attrs['units']})/({da_1d.attrs['units']})"
+        da_1d_units_r = cf_units.Unit(f"1/({da_1d.attrs['units']})").format()
+        da_out.attrs["units"] = f"{da_nd.attrs['units']} {da_1d_units_r}"
     da_out.attrs[
         "long_name"
     ] = f"regression slope between {da_1d.name} and {da_nd.name}"

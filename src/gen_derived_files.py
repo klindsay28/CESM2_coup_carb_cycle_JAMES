@@ -7,14 +7,12 @@ import yaml
 import xarray as xr
 
 from src import data_catalog
-from src.config import var_specs_fname, expr_metadata_fname
-from src.utils import copy_fill_settings
+from src.config import var_specs_fname, expr_metadata_fname, grid_dir
+from src.utils import copy_fill_settings, print_timestamp
 
 
 def main():
     data_catalog.set_catalog("experiments")
-
-    component = "ocn"
 
     experiments = [
         "piControl-cmip5",
@@ -25,7 +23,9 @@ def main():
         "esm-rcp85-cmip5",
     ]
 
-    varnames = [
+    varnames_dict = {}
+
+    varnames_dict["ocn"] = [
         "photoC_diat_zint_100m",
         "photoC_sp_zint_100m",
         "photoC_diaz_zint_100m",
@@ -36,9 +36,14 @@ def main():
         "CaCO3_FLUX_100m",
     ]
 
+    varnames_dict["lnd"] = [
+        "TSOI_10CM",
+    ]
+
     for experiment in experiments:
-        for varname in varnames:
-            gen_derived_files(varname, component, experiment)
+        for component, varnames in varnames_dict.items():
+            for varname in varnames:
+                gen_derived_files(varname, component, experiment)
 
 
 def gen_derived_files(
@@ -57,9 +62,21 @@ def gen_derived_files(
         return
 
     # basic error checking on specified variable derivation
-    if var_spec["derive_op"] not in ["zint_100m", "zint", "sel_100m"]:
+    if var_spec["derive_op"] not in [
+        "zint_100m",
+        "zint",
+        "sel_100m",
+        "lnd_zavg_10cm",
+        "lnd_zsum_10cm",
+    ]:
         raise ValueError(f'unknown derive_op={var_spec["derive_op"]} for {varname}')
-    if var_spec["derive_op"] in ["zint_100m", "zint", "sel_100m"]:
+    if var_spec["derive_op"] in [
+        "zint_100m",
+        "zint",
+        "sel_100m",
+        "lnd_zavg_10cm",
+        "lnd_zsum_10cm",
+    ]:
         if len(var_spec["derived_from_varnames"]) > 1:
             raise ValueError(
                 f'too many derived_from_varnames specified for derive_op={var_spec["derive_op"]} for {varname}'
@@ -142,6 +159,10 @@ def gen_derived_files(
                 gen_file_z_reduce(
                     var_spec["derive_op"], src_fname_disk_dict, varname, dst_fname_disk
                 )
+            if var_spec["derive_op"] in ["lnd_zavg_10cm", "lnd_zsum_10cm"]:
+                gen_file_lnd_depth_reduce(
+                    var_spec["derive_op"], src_fname_disk_dict, varname, dst_fname_disk
+                )
 
     return
 
@@ -149,7 +170,9 @@ def gen_derived_files(
 def gen_file_z_reduce(z_reduce_op, src_fname_disk_dict, varname, dst_fname_disk):
     src_varname = list(src_fname_disk_dict)[0]
     src_fname_disk = src_fname_disk_dict[src_varname]
-    with xr.open_dataset(src_fname_disk) as ds_in:
+
+    print_timestamp(f"opening {src_fname_disk}")
+    with xr.open_dataset(src_fname_disk, chunks={"time": 60}) as ds_in:
         vert_dims = ["z_t", "z_t_150m", "z_w", "z_w_bot", "z_w_top", "moc_z"]
         drop_varnames = [
             varname_tmp
@@ -203,6 +226,7 @@ def gen_file_z_reduce(z_reduce_op, src_fname_disk_dict, varname, dst_fname_disk)
             sel_dict = {}
             if z_reduce_op == "zint_100m":
                 sel_dict[vert_dim] = slice(0, 100.0e2)
+            print_timestamp(f"generating values")
             da_out.values = (
                 zint_weight.sel(sel_dict) * ds_in[src_varname].sel(sel_dict)
             ).sum(vert_dim)
@@ -217,6 +241,7 @@ def gen_file_z_reduce(z_reduce_op, src_fname_disk_dict, varname, dst_fname_disk)
 
         if z_reduce_op == "sel_100m":
             sel_dict = {vert_dim: 100.0e2}
+            print_timestamp(f"generating values")
             da_out.values = ds_in[src_varname].sel(sel_dict, method="nearest")
 
             # set sel_100m specific metadata
@@ -226,12 +251,78 @@ def gen_file_z_reduce(z_reduce_op, src_fname_disk_dict, varname, dst_fname_disk)
 
         ds_out[varname] = da_out
 
+        print_timestamp(f"writing {dst_fname_disk}")
         ds_out.to_netcdf(dst_fname_disk)
 
         # append, using NCO, dropped coordinates and variables that use them
         vars = ",".join(drop_coordnames + vars_on_drop_coordnames)
         cmd = ["ncks", "-A", "-v", vars, src_fname_disk, dst_fname_disk]
+        print_timestamp("appending dropped vars")
         cmd_out = subprocess.check_output(cmd).decode().split("\n")
+        print_timestamp("appending complete")
+
+    return
+
+
+def gen_file_lnd_depth_reduce(
+    z_reduce_op, src_fname_disk_dict, varname, dst_fname_disk
+):
+    src_varname = list(src_fname_disk_dict)[0]
+    src_fname_disk = src_fname_disk_dict[src_varname]
+
+    grid_fname = os.path.join(grid_dir, "CESM1-BGC.clm2.h0.Time_constant_3Dvars.nc")
+    ds_grid = xr.open_dataset(grid_fname)
+    dzsoi = ds_grid["DZSOI"]
+    layer_bot = dzsoi.cumsum(dim="levgrnd")
+    layer_top = layer_bot.shift({"levgrnd": 1}, fill_value=0.0)
+
+    print_timestamp(f"opening {src_fname_disk}")
+    with xr.open_dataset(src_fname_disk, chunks={"time": 120}) as ds_in:
+        vert_dims = ["levgrnd", "levsoi", "levlak", "levdcmp"]
+        drop_varnames = [
+            varname_tmp
+            for varname_tmp in ds_in.variables
+            if set(vert_dims) & set(ds_in[varname_tmp].dims)
+        ]
+
+        ds_out = ds_in.drop(drop_varnames)
+        for varname_tmp in ds_out.variables:
+            copy_fill_settings(ds_in[varname_tmp], ds_out[varname_tmp])
+
+        vert_dim = ds_in[src_varname].dims[1]
+        # initial setup of generated DataArray, preserves metadata (coordinates, attributes, encoding)
+        da_out = ds_in[src_varname].isel({vert_dim: 0}).drop(vert_dim)
+
+        # compute reduction on vert_dim
+
+        if z_reduce_op in ["lnd_zavg_10cm", "lnd_zsum_10cm"]:
+            if vert_dim not in ["levgrnd"]:
+                raise NotImplementedError(f"vert_dim={vert_dim} not implemented")
+
+            vert_dim_len = ds_in.dims[vert_dim]
+            z_thres = 0.1
+            frac = (z_thres - layer_top) / (layer_bot - layer_top)
+            weight = xr.where(frac > 1.0, 1.0, xr.where(frac < 0.0, 0.0, frac))
+            if z_reduce_op == "lnd_zavg_10cm":
+                weight = weight * dzsoi
+                weight = weight / weight.sum(dim="levgrnd")
+            print_timestamp(f"generating values")
+            da_out.values = (ds_in[src_varname] * weight).sum(vert_dim)
+
+            da_out.attrs["long_name"] = (
+                da_out.attrs["long_name"] + " in top 10cm of soil"
+            )
+
+        ds_out[varname] = da_out
+
+        # ensure NaN _FillValues do not get generated
+        for var in ds_out.variables:
+            if "_FillValue" not in ds_out[var].encoding:
+                ds_out[var].encoding["_FillValue"] = None
+
+        print_timestamp(f"writing {dst_fname_disk}")
+        ds_out.to_netcdf(dst_fname_disk)
+        print_timestamp("write complete")
 
     return
 

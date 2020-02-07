@@ -14,8 +14,8 @@ for case in b40.prescribed_carb.001 \
    mkdir -p /glade/scratch/klindsay/archive/$case/lnd/proc/tseries/monthly
    cd /glade/scratch/klindsay/archive/$case/lnd/proc/tseries/monthly
    # physical state
-   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.TSA.* *.RAIN.* *.TSOI.* *.H2OSOI.*"
-   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.TSA.* *.RAIN.* *.TSOI.* *.H2OSOI.*"
+   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.TSA.* *.RAIN.* *.TSOI.* *.H2OSOI.* *.SOILLIQ.*"
+   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.TSA.* *.RAIN.* *.TSOI.* *.H2OSOI.* *.SOILLIQ.*"
    # carbon pools
    hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.TOTECOSYSC.* *.TOTVEGC.* *.CWDC.* *.TOTLITC.* *.TOTSOMC.* *.TOTPRODC.* *.XSMRPOOL.*"
    hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.TOTECOSYSC.* *.TOTVEGC.* *.CWDC.* *.TOTLITC.* *.TOTSOMC.* *.TOTPRODC.* *.XSMRPOOL.*"

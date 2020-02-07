@@ -60,6 +60,14 @@ lnd:
     reduce_dims: [lat, lon]
     tseries_op: average
     vars:
+        RAIN:
+            display_units: mm d-1
+        TSOI_10CM:
+            derived_from_varnames: [TSOI]
+            derive_op: lnd_zavg_10cm
+        SOILWATER_10CM:
+            derived_from_varnames: [SOILLIQ]
+            derive_op: lnd_zsum_10cm
         # TOTECOSYSC components
         CWDC:
             tseries_op: integrate

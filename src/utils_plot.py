@@ -28,7 +28,11 @@ def plot_1var(
     varname,
     ds_list,
     legend_list,
+    linestyle_list=None,
+    handlelength=None,
     title=None,
+    ylabel=True,
+    show_legend=True,
     figsize=(10, 6),
     region_val=None,
     vdim_name=None,
@@ -37,6 +41,7 @@ def plot_1var(
     ax=None,
     xoffsets=None,
     yoffsets=None,
+    **kwargs,
 ):
     """
     create a simple plot of a tseries variable for multiple datasets
@@ -44,6 +49,7 @@ def plot_1var(
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
+    linestyle_ind = 0
     for ds_ind, ds in enumerate(ds_list):
         varname_x = next(dim for dim in ds[varname].dims if dim != "ensemble")
         da_x = ds[varname_x]
@@ -66,16 +72,28 @@ def plot_1var(
                 yvals = ds[varname].sel(seldict).isel(ensemble=ensemble).values
                 if yoffsets is not None:
                     yvals = yvals.copy() + yoffsets[ds_ind]
-                ax.plot(xvals, yvals, label=f"{legend_list[ds_ind]}, #{ensemble+1}")
+                Line2D_list = ax.plot(
+                    xvals,
+                    yvals,
+                    label=f"{legend_list[ds_ind]}, #{ensemble+1}",
+                    **kwargs,
+                )
+                if linestyle_list is not None:
+                    Line2D_list[0].set_linestyle(linestyle_list[linestyle_ind])
+                    linestyle_ind = (linestyle_ind + 1) % len(linestyle_list)
         else:
             yvals = ds[varname].sel(seldict).values
             if yoffsets is not None:
                 yvals = yvals.copy() + yoffsets[ds_ind]
-            ax.plot(xvals, yvals, label=legend_list[ds_ind])
+            Line2D_list = ax.plot(xvals, yvals, label=legend_list[ds_ind], **kwargs)
+            if linestyle_list is not None:
+                Line2D_list[0].set_linestyle(linestyle_list[linestyle_ind])
+                linestyle_ind = (linestyle_ind + 1) % len(linestyle_list)
     ax.set_xlabel(xlabel)
-    if ds[varname].attrs["units"] != "1":
+    if ylabel and ds[varname].attrs["units"] != "1":
         ax.set_ylabel(ds[varname].attrs["units"])
-    ax.legend()
+    if show_legend:
+        ax.legend(handlelength=handlelength)
     if title is not None:
         ax.set_title(title)
     if fname is not None:
