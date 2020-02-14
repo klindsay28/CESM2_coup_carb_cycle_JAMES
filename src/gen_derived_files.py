@@ -236,7 +236,7 @@ def gen_file_z_reduce(z_reduce_op, src_fname_disk_dict, varname, dst_fname_disk)
             long_name = da_out.attrs["long_name"]
             long_name += " Vertical Integral"
             if z_reduce_op == "zint_100m":
-                long_name_suffix += ", 0-100m"
+                long_name += ", 0-100m"
             da_out.attrs["long_name"] = long_name
 
         if z_reduce_op == "sel_100m":

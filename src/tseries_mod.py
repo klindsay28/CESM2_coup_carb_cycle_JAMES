@@ -1,6 +1,5 @@
 """interface for extracting timeseries from CESM output"""
 
-from collections import OrderedDict
 from datetime import datetime, timezone
 import math
 import os
@@ -8,7 +7,6 @@ import time
 import warnings
 
 import cf_units
-import numpy as np
 import xarray as xr
 import yaml
 
@@ -22,14 +20,12 @@ from src import esmlab_wrap
 from src.utils import (
     print_timestamp,
     copy_fill_settings,
-    dim_cnt_check,
     time_set_mid,
     copy_var_names,
     drop_var_names,
 )
+from src.utils_grid import get_weight, get_rmask
 from src.utils_units import clean_units, conv_units
-from src.CIME_shr_const import CIME_shr_const
-
 from src.config import rootdir, var_specs_fname
 
 time_name = "time"
@@ -301,13 +297,13 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     with xr.open_dataset(fnames[0]) as ds0:
         vardims = ds0[varname_resolved].dims
         rank = len(vardims)
-        vertlen = ds0.dims[vardims[1]] if rank > 3 else 1
-        tlen = ds0.dims[time_name] * len(fnames)
-        time_chunksize = 10 * 12 if rank < 4 else 12
+        vertlen = ds0.dims[vardims[1]] if rank > 3 else 0
+        time_chunksize = 10 * 12 if rank < 4 else 6
         ds0.chunk(chunks={time_name: time_chunksize})
         time_encoding = ds0[time_name].encoding
         var_encoding = ds0[varname_resolved].encoding
-        ds_encoding = ds0.encoding
+        ds0_attrs = ds0.attrs
+        ds0_encoding = ds0.encoding
         drop_var_names_loc = drop_var_names(component, ds0, varname_resolved)
 
     # instantiate cluster, if not provided via argument
@@ -319,10 +315,11 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     else:
         cluster = cluster_in
 
-    workers = 1
-    workers += math.log2(tlen / time_chunksize)
-    workers += math.log2(vertlen)
-    workers *= 4
+    workers = 12
+    if vertlen >= 20:
+        workers *= 2
+    if vertlen >= 60:
+        workers *= 2
     workers = 2 * round(workers / 2)  # round to nearest multiple of 2
     print_timestamp(f"calling cluster.scale({workers})")
     cluster.scale(workers)
@@ -353,10 +350,10 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             # restore encoding for time from first file
             ds_in[time_name].encoding = time_encoding
 
-            da_in = ds_in[varname_resolved]
-            da_in.encoding = var_encoding
+            da_in_full = ds_in[varname_resolved]
+            da_in_full.encoding = var_encoding
 
-            var_units = clean_units(da_in.attrs["units"])
+            var_units = clean_units(da_in_full.attrs["units"])
             if "unit_conv" in var_spec:
                 var_units = f'({var_spec["unit_conv"]})({var_units})'
 
@@ -367,53 +364,8 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             weight.attrs = weight_attrs
             print_timestamp("weight constructed")
 
-            # use var specific tseries_op if it exists, otherwise use tseries_op for component
-            if "tseries_op" in var_spec:
-                tseries_op = var_spec["tseries_op"]
-            else:
-                tseries_op = var_specs_all[component]["tseries_op"]
-
-            if tseries_op == "integrate":
-                da_out = (da_in * weight).sum(dim=reduce_dims)
-                da_out.name = varname
-                da_out.attrs["long_name"] = "Integrated " + da_in.attrs["long_name"]
-                da_out.attrs["units"] = cf_units.Unit(
-                    f'({weight.attrs["units"]})({var_units})'
-                ).format()
-            elif tseries_op == "average":
-                da_out = (da_in * weight).sum(dim=reduce_dims)
-                ones_masked = xr.ones_like(da_in).where(da_in.notnull())
-                denom = (ones_masked * weight).sum(dim=reduce_dims)
-                da_out /= denom
-                da_out.name = varname
-                da_out.attrs["long_name"] = "Averaged " + da_in.attrs["long_name"]
-                da_out.attrs["units"] = cf_units.Unit(var_units).format()
-            else:
-                msg = f"tseries_op={tseries_op} not implemented"
-                raise NotImplementedError(msg)
-
-            print_timestamp("da_out computation setup")
-
-            # propagate some settings from da_in to da_out
-            da_out.encoding["dtype"] = da_in.encoding["dtype"]
-            copy_fill_settings(da_in, da_out)
-
-            # change output units, if specified in var_spec
-            units_key = (
-                "integral_display_units"
-                if tseries_op == "integrate"
-                else "display_units"
-            )
-            if units_key in var_spec:
-                da_out = conv_units(da_out, var_spec[units_key])
-                print_timestamp("da_out units converted")
-
-            ds_out = da_out.to_dataset()
-
-            print_timestamp("ds_out generated")
-
-            # add regional sum of weights
-            da_in_t0 = da_in.isel(time=0)
+            # compute regional sum of weights
+            da_in_t0 = da_in_full.isel({time_name: 0}).drop(time_name)
             ones_masked_t0 = xr.ones_like(da_in_t0).where(da_in_t0.notnull())
             weight_sum = (ones_masked_t0 * weight).sum(dim=reduce_dims)
             weight_sum.name = f"weight_sum_{varname}"
@@ -421,16 +373,85 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             weight_sum.attrs[
                 "long_name"
             ] = f"sum of weights used in tseries generation for {varname}"
-            ds_out = xr.merge([ds_out, weight_sum])
 
-            # copy particular variables from ds_in
-            copy_var_list = [time_name]
-            if "bounds" in ds_in[time_name].attrs:
-                copy_var_list.append(ds_in[time_name].attrs["bounds"])
-            copy_var_list.extend(copy_var_names(component))
-            ds_out = xr.merge([ds_out, ds_in[copy_var_list]])
+            tlen = da_in_full.sizes[time_name]
+            print_timestamp(f"tlen={tlen}")
 
-            print_timestamp("copy_var_names added")
+            # use var specific tseries_op if it exists, otherwise use tseries_op for component
+            if "tseries_op" in var_spec:
+                tseries_op = var_spec["tseries_op"]
+            else:
+                tseries_op = var_specs_all[component]["tseries_op"]
+
+            ds_out_list = []
+
+            time_step_nominal = min(2 * workers * time_chunksize, tlen)
+            time_step = math.ceil(tlen / (tlen // time_step_nominal))
+            print_timestamp(f"time_step={time_step}")
+            for time_ind0 in range(0, tlen, time_step):
+                print_timestamp(f"time_ind={time_ind0}, {time_ind0 + time_step}")
+                da_in = da_in_full.isel(
+                    {time_name: slice(time_ind0, time_ind0 + time_step)}
+                )
+
+                if tseries_op == "integrate":
+                    da_out = (da_in * weight).sum(dim=reduce_dims)
+                    da_out.name = varname
+                    da_out.attrs["long_name"] = "Integrated " + da_in.attrs["long_name"]
+                    da_out.attrs["units"] = cf_units.Unit(
+                        f'({weight.attrs["units"]})({var_units})'
+                    ).format()
+                elif tseries_op == "average":
+                    da_out = (da_in * weight).sum(dim=reduce_dims)
+                    ones_masked = xr.ones_like(da_in).where(da_in.notnull())
+                    denom = (ones_masked * weight).sum(dim=reduce_dims)
+                    da_out /= denom
+                    da_out.name = varname
+                    da_out.attrs["long_name"] = "Averaged " + da_in.attrs["long_name"]
+                    da_out.attrs["units"] = cf_units.Unit(var_units).format()
+                else:
+                    msg = f"tseries_op={tseries_op} not implemented"
+                    raise NotImplementedError(msg)
+
+                print_timestamp("da_out computation setup")
+
+                # propagate some settings from da_in to da_out
+                da_out.encoding["dtype"] = da_in.encoding["dtype"]
+                copy_fill_settings(da_in, da_out)
+
+                ds_out = da_out.to_dataset()
+
+                print_timestamp("ds_out generated")
+
+                # copy particular variables from ds_in
+                copy_var_list = [time_name]
+                if "bounds" in ds_in[time_name].attrs:
+                    copy_var_list.append(ds_in[time_name].attrs["bounds"])
+                copy_var_list.extend(copy_var_names(component))
+                ds_out = xr.merge(
+                    [
+                        ds_out,
+                        ds_in[copy_var_list].isel(
+                            {time_name: slice(time_ind0, time_ind0 + time_step)}
+                        ),
+                    ]
+                )
+
+                print_timestamp("copy_var_names added")
+
+                # force computation of ds_out, while resources of client are still available
+                print_timestamp("calling ds_out.load")
+                ds_out_list.append(ds_out.load())
+                print_timestamp("returned from ds_out.load")
+
+            print_timestamp("concatenating ds_out_list datasets")
+            ds_out = xr.concat(
+                ds_out_list,
+                dim=time_name,
+                data_vars=[varname],
+                coords="minimal",
+                compat="override",
+            )
 
             # set ds_out.time to mid-interval values
             ds_out = time_set_mid(ds_out, time_name)
@@ -438,7 +459,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             print_timestamp("time_set_mid returned")
 
             # copy file attributes
-            ds_out.attrs = ds_in.attrs
+            ds_out.attrs = ds0_attrs
 
             datestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
             msg = f"{datestamp}: created by {__file__}"
@@ -450,13 +471,24 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
             ds_out.attrs["input_file_list"] = " ".join(fnames)
 
             for key in ["unlimited_dims"]:
-                if key in ds_encoding:
-                    ds_out.encoding[key] = ds_encoding[key]
+                if key in ds0_encoding:
+                    ds_out.encoding[key] = ds0_encoding[key]
 
-            # force computation of ds_out, while resources of client are still available
-            print_timestamp("calling ds_out.load")
-            ds_out.load()
-            print_timestamp("returned from ds_out.load")
+            # restore encoding for time from first file
+            ds_out[time_name].encoding = time_encoding
+
+            # change output units, if specified in var_spec
+            units_key = (
+                "integral_display_units"
+                if tseries_op == "integrate"
+                else "display_units"
+            )
+            if units_key in var_spec:
+                ds_out[varname] = conv_units(ds_out[varname], var_spec[units_key])
+                print_timestamp("units converted")
+
+            # add regional sum of weights
+            ds_out[weight_sum.name] = weight_sum
 
     print_timestamp("ds_in and client closed")
 
@@ -478,194 +510,6 @@ def test_open_mfdataset(paths, time_chunksize, varname=None):
         )
         if varname is not None:
             print(ds[varname])
-
-
-def get_weight(ds, component, reduce_dims):
-    """construct averaging/integrating weight appropriate for component and reduce_dims"""
-    if component == "lnd":
-        return get_area(ds, component)
-    if component == "ice":
-        return get_area(ds, component)
-    if component == "atm":
-        if "lev" in reduce_dims:
-            return get_volume(ds, component)
-        return get_area(ds, component)
-    if component == "ocn":
-        if "z_t" in reduce_dims or "z_t_150m" in reduce_dims:
-            return get_volume(ds, component)
-        return get_area(ds, component)
-    msg = f"unknown component={component}"
-    raise ValueError(msg)
-
-
-def get_area(ds, component):
-    """return area DataArray appropriate for component"""
-    if component == "ocn":
-        dim_cnt_check(ds, "TAREA", 2)
-        return ds["TAREA"]
-    if component == "ice":
-        dim_cnt_check(ds, "tarea", 2)
-        return ds["tarea"]
-    if component == "lnd":
-        dim_cnt_check(ds, "landfrac", 2)
-        dim_cnt_check(ds, "area", 2)
-        da_ret = ds["landfrac"] * ds["area"]
-        da_ret.name = "area"
-        da_ret.attrs["units"] = ds["area"].attrs["units"]
-        return da_ret
-    if component == "atm":
-        dim_cnt_check(ds, "gw", 1)
-        area_earth = (
-            4.0 * CIME_shr_const("pi") * CIME_shr_const("rearth") ** 2
-        )  # area of earth in CIME [m2]
-
-        # normalize area so that sum over "lat", "lon" yields area_earth
-        area = ds["gw"] + 0.0 * ds["lon"]  # add "lon" dimension
-        area = (area_earth / area.sum(dim=("lat", "lon"))) * area
-        area.attrs["units"] = "m2"
-        return area
-    msg = f"unknown component={component}"
-    raise ValueError(msg)
-
-
-def get_volume(ds, component):
-    """return volume DataArray appropriate for component"""
-    if component == "ocn":
-        dim_cnt_check(ds, "dz", 1)
-        dim_cnt_check(ds, "TAREA", 2)
-        volume = ds["dz"] * ds["TAREA"]
-        volume.attrs["units"] = "cm3"
-        return volume
-
-    msg = f"component={component} not implemented"
-    raise NotImplementedError(msg)
-
-
-def get_rmask(ds, component):
-    """return region mask appropriate for component"""
-    rmask_od = OrderedDict()
-    if component == "ocn":
-        dim_cnt_check(ds, "KMT", 2)
-        lateral_dims = ds["KMT"].dims
-        KMT = (
-            ds["KMT"].fillna(0).load()
-        )  # treat missing-values, which arise from land-block elimination as 0
-        TLAT = ds["TLAT"].load()
-        rmask_od["Global"] = xr.where(KMT > 0, 1.0, 0.0)
-        rmask_od["SouOce (90S-30S)"] = xr.where((KMT > 0) & (TLAT < -30.0), 1.0, 0.0)
-        rmask_od["SH_high_lat (90S-44S)"] = xr.where(
-            (KMT > 0) & (TLAT < -44.0), 1.0, 0.0
-        )
-        rmask_od["SH_mid_lat (44S-18S)"] = xr.where(
-            (KMT > 0) & (TLAT >= -44.0) & (TLAT < -18.0), 1.0, 0.0
-        )
-        rmask_od["low_lat (18S-18N)"] = xr.where(
-            (KMT > 0) & (TLAT >= -18.0) & (TLAT < 18.0), 1.0, 0.0
-        )
-        rmask_od["NH_mid_lat (18N-49N)"] = xr.where(
-            (KMT > 0) & (TLAT >= 18.0) & (TLAT < 49.0), 1.0, 0.0
-        )
-        rmask_od["NH_high_lat (49N-90N)"] = xr.where(
-            (KMT > 0) & (TLAT >= 49.0), 1.0, 0.0
-        )
-    if component == "ice":
-        dim_cnt_check(ds, "tmask", 2)
-        dim_cnt_check(ds, "TLAT", 2)
-        lateral_dims = ds["tmask"].dims
-        tmask = ds["tmask"].load()
-        TLAT = ds["TLAT"].load()
-        rmask_od["NH"] = xr.where((tmask == 1) & (TLAT >= 0.0), 1.0, 0.0)
-        rmask_od["SH"] = xr.where((tmask == 1) & (TLAT < 0.0), 1.0, 0.0)
-    if component == "lnd":
-        dim_cnt_check(ds, "landfrac", 2)
-        lateral_dims = ds["landfrac"].dims
-        lat = ds["lat"].load()
-        lon = ds["lon"].load()
-        rmask_od["Global"] = xr.where(ds["landfrac"] > 0, 1.0, 0.0)
-        rmask_od["CentralAfrica"] = xr.where(
-            (ds["landfrac"] > 0)
-            & (lat >= -10.0)
-            & (lat < 10.0)
-            & (lon >= 0.0)
-            & (lon < 55.0),
-            1.0,
-            0.0,
-        )
-        rmask_od["MaritimeContinent"] = xr.where(
-            (ds["landfrac"] > 0)
-            & (lat >= -11.0)
-            & (lat < 8.0)
-            & (lon >= 90.0)
-            & (lon < 160.0),
-            1.0,
-            0.0,
-        )
-        rmask_od["Australia"] = xr.where(
-            (ds["landfrac"] > 0)
-            & (lat >= -45.0)
-            & (lat < -11.0)
-            & (lon >= 110.0)
-            & (lon < 160.0),
-            1.0,
-            0.0,
-        )
-        rmask_od["TropSAmer"] = xr.where(
-            (ds["landfrac"] > 0)
-            & (lat >= -15.0)
-            & (lat < 15.0)
-            & (lon >= 278.0)
-            & (lon < 330.0),
-            1.0,
-            0.0,
-        )
-        rmask_od["SSAmer"] = xr.where(
-            (ds["landfrac"] > 0)
-            & (lat >= -60.0)
-            & (lat < -15.0)
-            & (lon >= 278.0)
-            & (lon < 330.0),
-            1.0,
-            0.0,
-        )
-    if component == "atm":
-        dim_cnt_check(ds, "gw", 1)
-        lateral_dims = ("lat", "lon")
-        lat = ds["lat"].load()
-        lon = ds["lon"].load()
-        rmask_od["Global"] = xr.where((lat > -100.0) & (lon > -400.0), 1.0, 0.0)
-        rmask_od["SH"] = xr.where((lat < 0.0) & (lon > -400.0), 1.0, 0.0)
-        rmask_od["SH_Trop"] = xr.where(
-            (lat > -30) & (lat < 0.0) & (lon > -400.0), 1.0, 0.0
-        )
-        rmask_od["NH"] = xr.where((lat > 0.0) & (lon > -400.0), 1.0, 0.0)
-        rmask_od["NH_Trop"] = xr.where(
-            (lat > 0.0) & (lat < 30.0) & (lon > -400.0), 1.0, 0.0
-        )
-        rmask_od["nino34"] = xr.where(
-            (lat > -5.0) & (lat < 5.0) & (lon > 190) & (lon < 240), 1.0, 0.0
-        )
-    if len(rmask_od) == 0:
-        msg = f"unknown component={component}"
-        raise ValueError(msg)
-
-    print_timestamp("rmask_od created")
-
-    rmask = xr.DataArray(
-        np.zeros((len(rmask_od), ds.dims[lateral_dims[0]], ds.dims[lateral_dims[1]])),
-        dims=("region", lateral_dims[0], lateral_dims[1]),
-        coords={"region": list(rmask_od.keys())},
-    )
-    rmask.region.encoding["dtype"] = "S1"
-
-    # add coordinates if appropriate
-    if component == "atm" or component == "lnd":
-        rmask.coords["lat"] = ds["lat"]
-        rmask.coords["lon"] = ds["lon"]
-
-    for i, rmask_field in enumerate(rmask_od.values()):
-        rmask.values[i, :, :] = rmask_field
-
-    return rmask
 
 
 def tseries_fname(varname, component, experiment, ensemble, freq):
