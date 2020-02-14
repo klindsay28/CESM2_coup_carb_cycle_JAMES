@@ -31,7 +31,8 @@ def plot_1var(
     linestyle_list=None,
     handlelength=None,
     title=None,
-    ylabel=True,
+    show_xlabel=True,
+    show_ylabel=True,
     show_legend=True,
     figsize=(10, 6),
     region_val=None,
@@ -89,8 +90,9 @@ def plot_1var(
             if linestyle_list is not None:
                 Line2D_list[0].set_linestyle(linestyle_list[linestyle_ind])
                 linestyle_ind = (linestyle_ind + 1) % len(linestyle_list)
-    ax.set_xlabel(xlabel)
-    if ylabel and ds[varname].attrs["units"] != "1":
+    if show_xlabel:
+        ax.set_xlabel(xlabel)
+    if show_ylabel and ds[varname].attrs["units"] != "1":
         ax.set_ylabel(ds[varname].attrs["units"])
     if show_legend:
         ax.legend(handlelength=handlelength)
