@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import math
 import os
+import sys
 import time
 import warnings
 
@@ -13,7 +14,10 @@ import yaml
 import dask
 
 # import dask_jobqueue
-import ncar_jobqueue
+try:
+    import ncar_jobqueue
+except RuntimeError:
+    pass
 
 from src import data_catalog
 from src import esmlab_wrap
@@ -70,7 +74,7 @@ def tseries_get_vars(
 
     # instantiate cluster, if not provided via argument
     # ignore dashboard warnings when instantiating
-    if cluster_in is None:
+    if cluster_in is None and "ncar_jobqueue" in sys.modules:
         with warnings.catch_warnings():
             warnings.filterwarnings(action="ignore", module=".*dashboard")
             cluster = ncar_jobqueue.NCARCluster()
@@ -95,7 +99,7 @@ def tseries_get_vars(
     )
 
     # if cluster was instantiated here, close it
-    if cluster_in is None:
+    if cluster_in is None and "ncar_jobqueue" in sys.modules:
         ds.load()
         cluster.close()
 
@@ -309,9 +313,12 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
     # instantiate cluster, if not provided via argument
     # ignore dashboard warnings when instantiating
     if cluster_in is None:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(action="ignore", module=".*dashboard")
-            cluster = ncar_jobqueue.NCARCluster()
+        if "ncar_jobqueue" in sys.modules:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(action="ignore", module=".*dashboard")
+                cluster = ncar_jobqueue.NCARCluster()
+        else:
+            raise ValueError("cluster_in not provided and ncar_jobqueue did not load successfully")
     else:
         cluster = cluster_in
 
