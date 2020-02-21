@@ -318,7 +318,9 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
                 warnings.filterwarnings(action="ignore", module=".*dashboard")
                 cluster = ncar_jobqueue.NCARCluster()
         else:
-            raise ValueError("cluster_in not provided and ncar_jobqueue did not load successfully")
+            raise ValueError(
+                "cluster_in not provided and ncar_jobqueue did not load successfully"
+            )
     else:
         cluster = cluster_in
 
