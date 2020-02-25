@@ -10,7 +10,7 @@ from src.config import rootdir
 from src.tseries_mod import tseries_get_vars
 from src.utils_test import dict_skip_keys, ds_identical_skip_attr_list
 
-data_catalog.set_catalog("experiments")
+data_catalog.set_catalog("cesm_coupled")
 
 cache_dir_test = os.path.join(rootdir, "tseries_test")
 os.makedirs(cache_dir_test, exist_ok=True)

@@ -1,4 +1,4 @@
-experiments:
+cesm_coupled:
     type: cesm
     data_sources:
         piControl:
@@ -140,19 +140,6 @@ experiments:
               parent_branch_year: 151
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.002
 
-        coreII:
-            - case: g.e21.GOMIPECOIAF.T62_g17.CMIP6-omip1.002
-              parent_experiment: None
-              parent_branch_year: 1
-              root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/g.e21.GOMIPECOIAF.T62_g17.CMIP6-omip1.002
-              exclude_dirs: ['*/hist', 'rest/*']
-        JRA:
-            - case: g.e21.GOMIPECOIAF_JRA.TL319_g17.CMIP6-omip2.001
-              parent_experiment: None
-              parent_branch_year: 1
-              root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/g.e21.GOMIPECOIAF_JRA.TL319_g17.CMIP6-omip2.001
-              exclude_dirs: ['*/hist', 'rest/*']
-
         piControl-cmip5:
             - case: b40.prescribed_carb.001
               parent_experiment: None
@@ -216,3 +203,35 @@ experiments:
               root_dir: /glade/scratch/klindsay/archive/b40.rcp8_5.1deg.bprp.002
               exclude_dirs: ['*/hist']
               hpss_root_dir: /CCSM/csm/b40.rcp8_5.1deg.bprp.002
+
+cesm_land:
+    type: cesm
+    data_sources:
+        GSWP-CLM4:
+            - case: clm40_r270_1deg_GSWP3v1_CMIP6_hist
+              parent_experiment: None
+              parent_branch_year: 1
+              root_dir: /glade/collections/cdg/data/CLM_LAND_ONLY_RELEASE/CLM4/clm40_r270_1deg_GSWP3v1_CMIP6_hist
+              exclude_dirs: ['*/CMOR']
+        GSWP-CLM4:
+            - case: clm50_r270_1deg_GSWP3V1_iso_newpopd_hist
+              parent_experiment: None
+              parent_branch_year: 1
+              root_dir: /glade/collections/cdg/data/CLM_LAND_ONLY_RELEASE/CLM5/clm50_r270_1deg_GSWP3V1_iso_newpopd_hist
+              exclude_dirs: ['*/CMOR']
+
+cesm_ocean_ice:
+    type: cesm
+    data_sources:
+        coreII:
+            - case: g.e21.GOMIPECOIAF.T62_g17.CMIP6-omip1.002
+              parent_experiment: None
+              parent_branch_year: 1
+              root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/g.e21.GOMIPECOIAF.T62_g17.CMIP6-omip1.002
+              exclude_dirs: ['*/hist', 'rest/*']
+        JRA:
+            - case: g.e21.GOMIPECOIAF_JRA.TL319_g17.CMIP6-omip2.001
+              parent_experiment: None
+              parent_branch_year: 1
+              root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/g.e21.GOMIPECOIAF_JRA.TL319_g17.CMIP6-omip2.001
+              exclude_dirs: ['*/hist', 'rest/*']

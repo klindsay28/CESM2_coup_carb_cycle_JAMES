@@ -12,7 +12,7 @@ from src.utils import copy_fill_settings, print_timestamp
 
 
 def main():
-    data_catalog.set_catalog("experiments")
+    data_catalog.set_catalog("cesm_coupled")
 
     experiments = [
         "piControl-cmip5",
