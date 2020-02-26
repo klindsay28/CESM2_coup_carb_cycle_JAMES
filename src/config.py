@@ -8,6 +8,8 @@ rootdir = os.path.abspath(os.path.join(srcdir, os.pardir))
 
 forcing_dir = os.path.join(rootdir, "forcing")
 
+nino_obs_dir = os.path.join(rootdir, "nino_obs")
+
 grid_dir = os.path.join(rootdir, "grid")
 
 obspack_dir = os.path.join(
