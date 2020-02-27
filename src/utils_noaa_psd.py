@@ -12,6 +12,7 @@ def psd_read_file(
 ):
     """
     Return a Dataset of values from a NOAA PSD formatted file.
+    https://www.esrl.noaa.gov/psd/data/timeseries/monthly/standard.html
     If encode_time==False, time values are cftime objects.
     Otherwise they are floating point numbers in units of "days since {year_ref}-01-01",
     with calendar=calendar.
@@ -28,13 +29,23 @@ def psd_read_file(
         var_values = np.empty((year_cnt, 12))
         for year in range(year_beg, year_end + 1):
             vals_as_strs = fobj.readline().split()
-            var_values[year - year_beg, :] = np.array(vals_as_strs[1:])
+            var_values[year - year_beg, :] = [float(val) for val in vals_as_strs[1:]]
         var_values = var_values.reshape(12 * year_cnt)
+        
+        vals_as_strs = fobj.readline().split()
+        fill_value = float(vals_as_strs[0])
+        
+        info = []
+        for line in iter(fobj.readline, ''):
+            info.append(line)
 
     # create DataArray and add to Dataset
-    da = xr.DataArray(var_values, dims="time", attrs=attrs)
+    da = xr.DataArray(var_values, dims="time", coords={"time": ds["time"]}, attrs=attrs)
+    da.attrs['_FillValue'] = fill_value
     ds[name] = da
 
+    # add global metadata to Dataset atributes
+    ds.attrs["info"] = info
     ds.attrs["input_file_list"] = fname_psd
 
     return ds
@@ -102,6 +113,11 @@ def gen_monthly_time_vars(
         coords={"time": time_var},
     )
 
+    time_var.encoding["_FillValue"] = None
+    time_var.encoding["dtype"] = "float64"
+    time_bounds_var.encoding["_FillValue"] = None
+    time_bounds_var.encoding["dtype"] = "float64"
+
     # store metadata appropriately
     if encode_time == True:
         time_var.attrs["units"] = time_units
@@ -110,5 +126,4 @@ def gen_monthly_time_vars(
         time_var.encoding["units"] = time_units
         time_var.encoding["calendar"] = calendar
 
-    ds = xr.Dataset({"time": time_var, "time_bounds": time_bounds_var})
-    return ds
+    return xr.Dataset({"time": time_var, "time_bounds": time_bounds_var})
