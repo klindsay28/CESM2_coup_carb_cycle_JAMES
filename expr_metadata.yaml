@@ -213,7 +213,7 @@ cesm_land:
               parent_branch_year: 1
               root_dir: /glade/collections/cdg/data/CLM_LAND_ONLY_RELEASE/CLM4/clm40_r270_1deg_GSWP3v1_CMIP6_hist
               exclude_dirs: ['*/CMOR']
-        GSWP-CLM4:
+        GSWP-CLM5:
             - case: clm50_r270_1deg_GSWP3V1_iso_newpopd_hist
               parent_experiment: None
               parent_branch_year: 1
