@@ -21,4 +21,5 @@ ptrn6="$CASE.*\.[2-9][0-9][0-9][0-9][01][0-9][0123][0-9]-[0-9][0-9][0-9][0-9][01
 zcat cesm_coupled.csv.gz | grep -vE "$ptrn1|$ptrn2|$ptrn3|$ptrn4|$ptrn5|$ptrn6" > cesm_coupled.csv
 zcat cesm_coupled.csv.gz | grep -E  "$ptrn1|$ptrn2|$ptrn3|$ptrn4|$ptrn5|$ptrn6" > cesm_coupled.deleted_entries.csv
 mv cesm_coupled.csv.gz cesm_coupled.csv.bak.gz
+rm cesm_coupled.deleted_entries.csv.gz
 gzip cesm_coupled.deleted_entries.csv cesm_coupled.csv

@@ -20,8 +20,8 @@ for case in b40.prescribed_carb.001 \
    hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.TOTECOSYSC.* *.TOTVEGC.* *.CWDC.* *.TOTLITC.* *.TOTSOMC.* *.TOTPRODC.* *.XSMRPOOL.*"
    hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.TOTECOSYSC.* *.TOTVEGC.* *.CWDC.* *.TOTLITC.* *.TOTSOMC.* *.TOTPRODC.* *.XSMRPOOL.*"
    # carbon fluxes
-   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.NBP.* *.GPP.* *.NPP.* *.ER.* *.AR.* *.HR.* *.COL_FIRE_CLOSS.*"
-   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.NBP.* *.GPP.* *.NPP.* *.ER.* *.AR.* *.HR.* *.COL_FIRE_CLOSS.*"
+   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; ls *.NBP.* *.NEE.* *.GPP.* *.NPP.* *.ER.* *.AR.* *.HR.* *.COL_FIRE_CLOSS.*"
+   hsi "cd /CCSM/csm/$case/lnd/proc/tseries/monthly ; cget *.NBP.* *.NEE.* *.GPP.* *.NPP.* *.ER.* *.AR.* *.HR.* *.COL_FIRE_CLOSS.*"
 
 done
 

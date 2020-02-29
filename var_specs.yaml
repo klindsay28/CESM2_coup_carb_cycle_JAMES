@@ -125,6 +125,9 @@ lnd:
         NEP:
             tseries_op: integrate
             integral_display_units: Pg yr-1
+        NEE:
+            tseries_op: integrate
+            integral_display_units: Pg yr-1
         COL_FIRE_CLOSS:
             tseries_op: integrate
             integral_display_units: Pg yr-1
