@@ -257,6 +257,10 @@ def _tseries_gen_wrap(
         for var in ds.variables:
             if "_FillValue" not in ds[var].encoding:
                 ds[var].encoding["_FillValue"] = None
+        # remove attributes with forbidden names
+        for att_name in ["_NCProperties"]:
+            if att_name in ds.attrs:
+                del ds.attrs[att_name]
         ds.to_netcdf(tseries_path, format="NETCDF4_CLASSIC")
         print_timestamp(f"{tseries_path} written")
 
