@@ -68,13 +68,19 @@ def compute_mon_anomaly(ds):
     tb = ds[tb_name]
     time_decoded = tb.dtype == np.dtype("O")
     if time_decoded:
-        tb_vals_encoded = cftime.date2num(ds[tb_name].values, ds.time.encoding["units"], ds.time.encoding["calendar"])
+        tb_vals_encoded = cftime.date2num(
+            ds[tb_name].values, ds.time.encoding["units"], ds.time.encoding["calendar"]
+        )
     else:
         tb_vals_encoded = ds[tb_name].values
     val0 = -0.5 / 24.0
-    tb_vals_encoded = np.where(abs(tb_vals_encoded - val0) < 1.0e-10, val0, tb_vals_encoded)
+    tb_vals_encoded = np.where(
+        abs(tb_vals_encoded - val0) < 1.0e-10, val0, tb_vals_encoded
+    )
     if time_decoded:
-        ds[tb_name].values = cftime.num2date(tb_vals_encoded, ds.time.encoding["units"], ds.time.encoding["calendar"])
+        ds[tb_name].values = cftime.num2date(
+            tb_vals_encoded, ds.time.encoding["units"], ds.time.encoding["calendar"]
+        )
     else:
         tb_vals_encoded = ds[tb_name].values = tb_vals_encoded
     ds = time_set_mid(ds, "time")

@@ -10,6 +10,8 @@ forcing_dir = os.path.join(rootdir, "forcing")
 
 nino_obs_dir = os.path.join(rootdir, "nino_obs")
 
+noaa_co2_flask_surface_dir = os.path.join(rootdir, "noaa_co2_flask_surface")
+
 grid_dir = os.path.join(rootdir, "grid")
 
 obspack_dir = os.path.join(

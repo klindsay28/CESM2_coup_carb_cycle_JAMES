@@ -4,8 +4,6 @@ import cftime
 import numpy as np
 import xarray as xr
 
-from src.xr_ds_ex import gen_time_bounds_values
-
 
 def psd_read_file(
     fname_psd, name, attrs, encode_time=False, calendar="noleap", year_ref=1
@@ -31,17 +29,17 @@ def psd_read_file(
             vals_as_strs = fobj.readline().split()
             var_values[year - year_beg, :] = [float(val) for val in vals_as_strs[1:]]
         var_values = var_values.reshape(12 * year_cnt)
-        
+
         vals_as_strs = fobj.readline().split()
         fill_value = float(vals_as_strs[0])
-        
+
         info = []
-        for line in iter(fobj.readline, ''):
+        for line in iter(fobj.readline, ""):
             info.append(line)
 
     # create DataArray and add to Dataset
     da = xr.DataArray(var_values, dims="time", coords={"time": ds["time"]}, attrs=attrs)
-    da.attrs['_FillValue'] = fill_value
+    da.attrs["_FillValue"] = fill_value
     ds[name] = da
 
     # add global metadata to Dataset atributes
