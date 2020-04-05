@@ -6,6 +6,9 @@ cesm_coupled:
               parent_experiment: None
               parent_branch_year: 1
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1850.f09_g17.CMIP6-piControl.001
+              plot_opts:
+                  color: c
+                  linestyle: solid
         abrupt-4xCO2:
             - case: b.e21.BCO2x4cmip6.f09_g17.CMIP6-abrupt4xCO2.001
               parent_experiment: piControl
@@ -130,15 +133,24 @@ cesm_coupled:
               parent_experiment: piControl
               parent_branch_year: 581
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.B1850.f09_g17.CMIP6-esm-piControl.001
+              plot_opts:
+                  color: blue
+                  linestyle: solid
         esm-hist:
             - case: b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.001
               parent_experiment: esm-piControl
               parent_branch_year: 51
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.001
+              plot_opts:
+                  color: c
+                  linestyle: solid
             - case: b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.002
               parent_experiment: esm-piControl
               parent_branch_year: 151
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BHIST_BPRP.f09_g17.CMIP6-esm-hist.002
+              plot_opts:
+                  color: y
+                  linestyle: solid
 
         piControl-cmip5:
             - case: b40.prescribed_carb.001
@@ -147,6 +159,9 @@ cesm_coupled:
               root_dir: /glade/scratch/klindsay/archive/b40.prescribed_carb.001
               exclude_dirs: ['*/hist']
               hpss_root_dir: /CCSM/csm/b40.prescribed_carb.001
+              plot_opts:
+                  color: green
+                  linestyle: !!python/tuple [0, !!python/tuple [6, 6]]
         1pctCO2-cmip5:
             - case: b40.1850_ramp.1deg.ncbdrd.001
               parent_experiment: piControl-cmip5
@@ -189,6 +204,9 @@ cesm_coupled:
               root_dir: /glade/scratch/klindsay/archive/b40.coup_carb.004
               exclude_dirs: ['*/hist']
               hpss_root_dir: /CCSM/csm/b40.coup_carb.004
+              plot_opts:
+                  color: y
+                  linestyle: !!python/tuple [0, !!python/tuple [6, 6]]
         esm-hist-cmip5:
             - case: b40.20th.1deg.coup.001
               parent_experiment: esm-piControl-cmip5
@@ -196,6 +214,9 @@ cesm_coupled:
               root_dir: /glade/scratch/klindsay/archive/b40.20th.1deg.coup.001
               exclude_dirs: ['*/hist']
               hpss_root_dir: /CCSM/csm/b40.20th.1deg.coup.001
+              plot_opts:
+                  color: green
+                  linestyle: !!python/tuple [0, !!python/tuple [6, 6]]
         esm-rcp85-cmip5:
             - case: b40.rcp8_5.1deg.bprp.002
               parent_experiment: esm-hist-cmip5

@@ -10,6 +10,14 @@ from src.utils import is_date, time_year_plus_frac
 from src.config import rootdir
 
 
+def gen_plot_opt_list(expr_list, expr_metadata, plot_opt_key):
+    retval = []
+    for expr in expr_list:
+        for expr_metadata_ens in expr_metadata[expr]:
+            retval.append(expr_metadata_ens['plot_opts'][plot_opt_key])
+    return retval
+
+
 def _fig_fname_resolved(fname):
     """
     Given a relative filename fname, return full path for a figure.
@@ -28,8 +36,9 @@ def plot_1var(
     varname,
     ds_list,
     legend_list,
+    color_list=None,
     linestyle_list=None,
-    handlelength=None,
+    handlelength=6.0,
     title=None,
     show_xlabel=True,
     show_ylabel=True,
@@ -42,7 +51,7 @@ def plot_1var(
     ax=None,
     xoffsets=None,
     yoffsets=None,
-    **kwargs,
+    **kwargs_plot,
 ):
     """
     create a simple plot of a tseries variable for multiple datasets
@@ -50,6 +59,7 @@ def plot_1var(
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
+    color_ind = 0
     linestyle_ind = 0
     for ds_ind, ds in enumerate(ds_list):
         varname_x = next(dim for dim in ds[varname].dims if dim != "ensemble")
@@ -77,8 +87,11 @@ def plot_1var(
                     xvals,
                     yvals,
                     label=f"{legend_list[ds_ind]}, #{ensemble+1}",
-                    **kwargs,
+                    **kwargs_plot,
                 )
+                if color_list is not None:
+                    Line2D_list[0].set_color(color_list[color_ind])
+                    color_ind = (color_ind + 1) % len(color_list)
                 if linestyle_list is not None:
                     Line2D_list[0].set_linestyle(linestyle_list[linestyle_ind])
                     linestyle_ind = (linestyle_ind + 1) % len(linestyle_list)
@@ -86,7 +99,10 @@ def plot_1var(
             yvals = ds[varname].sel(seldict).values
             if yoffsets is not None:
                 yvals = yvals.copy() + yoffsets[ds_ind]
-            Line2D_list = ax.plot(xvals, yvals, label=legend_list[ds_ind], **kwargs)
+            Line2D_list = ax.plot(xvals, yvals, label=legend_list[ds_ind], **kwargs_plot)
+            if color_list is not None:
+                Line2D_list[0].set_color(color_list[color_ind])
+                color_ind = (color_ind + 1) % len(color_list)
             if linestyle_list is not None:
                 Line2D_list[0].set_linestyle(linestyle_list[linestyle_ind])
                 linestyle_ind = (linestyle_ind + 1) % len(linestyle_list)
