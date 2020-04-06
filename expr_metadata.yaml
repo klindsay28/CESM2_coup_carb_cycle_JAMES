@@ -101,14 +101,23 @@ cesm_coupled:
               parent_experiment: piControl-waccm
               parent_branch_year: 56
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.001
+              plot_opts:
+                  color: c
+                  linestyle: solid
             - case: b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.002
               parent_experiment: piControl-waccm
               parent_branch_year: 61
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.002
+              plot_opts:
+                  color: y
+                  linestyle: solid
             - case: b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.003
               parent_experiment: piControl-waccm
               parent_branch_year: 70
               root_dir: /glade/campaign/collections/cmip/CMIP6/timeseries-cmip6/b.e21.BWHIST.f09_g17.CMIP6-historical-WACCM.003
+              plot_opts:
+                  color: green
+                  linestyle: solid
         ssp585-waccm:
             - case: b.e21.BWSSP585cmip6.f09_g17.CMIP6-SSP5-8.5-WACCM.001
               parent_experiment: historical-waccm
