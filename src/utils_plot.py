@@ -18,7 +18,7 @@ def gen_plot_opt_list(expr_list, expr_metadata, plot_opt_key):
     return retval
 
 
-def _fig_fname_resolved(fname):
+def fig_fname_resolved(fname):
     """
     Given a relative filename fname, return full path for a figure.
     The directory containing the returned path is created, if it doesn't already exist.
@@ -116,7 +116,7 @@ def plot_1var(
         ax.set_title(title)
     if fname is not None:
         plt.savefig(
-            _fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
+            fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
         )
     return ax
 
@@ -169,7 +169,7 @@ def plot_1ds(
         ax.set_title(title)
     if fname is not None:
         plt.savefig(
-            _fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
+            fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
         )
     return ax
 
@@ -211,7 +211,7 @@ def plot_vars_vs_var(
         ax.set_title(title)
     if fname is not None:
         plt.savefig(
-            _fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
+            fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
         )
     return ax
 
