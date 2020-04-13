@@ -9,6 +9,20 @@ from src.utils import print_timestamp, dim_cnt_check
 from src.CIME_shr_const import CIME_shr_const
 
 
+def get_latlon_isel_dict(ds, component, lat, lon):
+    "return dict that selects for lat and lon values for given component"
+    if component == "atm":
+        dlat = ds["lat"] - lat
+        lat_ind = int(abs(dlat).argmin())
+        dlon = ds["lon"] - lon
+        # shift dlon to be between -180 and 180
+        dlon = (dlon.__mod__(360.0) + 180.0).__mod__(360.0) - 180
+        lon_ind = int(abs(dlon).argmin())
+        latlon_isel_dict = {"lat": lat_ind, "lon": lon_ind}
+        return latlon_isel_dict
+    raise NotImplementedError(f"component={component} not implemented")
+
+
 def get_weight(ds, component, reduce_dims):
     """construct averaging/integrating weight appropriate for component and reduce_dims"""
     if component == "lnd":

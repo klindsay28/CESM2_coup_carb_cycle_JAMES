@@ -14,7 +14,7 @@ def gen_plot_opt_list(expr_list, expr_metadata, plot_opt_key):
     retval = []
     for expr in expr_list:
         for expr_metadata_ens in expr_metadata[expr]:
-            retval.append(expr_metadata_ens['plot_opts'][plot_opt_key])
+            retval.append(expr_metadata_ens["plot_opts"][plot_opt_key])
     return retval
 
 
@@ -99,7 +99,9 @@ def plot_1var(
             yvals = ds[varname].sel(seldict).values
             if yoffsets is not None:
                 yvals = yvals.copy() + yoffsets[ds_ind]
-            Line2D_list = ax.plot(xvals, yvals, label=legend_list[ds_ind], **kwargs_plot)
+            Line2D_list = ax.plot(
+                xvals, yvals, label=legend_list[ds_ind], **kwargs_plot
+            )
             if color_list is not None:
                 Line2D_list[0].set_color(color_list[color_ind])
                 color_ind = (color_ind + 1) % len(color_list)
@@ -115,9 +117,7 @@ def plot_1var(
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(
-            fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
-        )
+        plt.savefig(fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None})
     return ax
 
 
@@ -168,9 +168,7 @@ def plot_1ds(
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(
-            fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
-        )
+        plt.savefig(fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None})
     return ax
 
 
@@ -210,9 +208,7 @@ def plot_vars_vs_var(
     if title is not None:
         ax.set_title(title)
     if fname is not None:
-        plt.savefig(
-            fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None}
-        )
+        plt.savefig(fig_fname_resolved(fname), dpi=600, metadata={"CreationDate": None})
     return ax
 
 

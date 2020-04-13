@@ -219,16 +219,16 @@ def _tseries_gen_wrap(
         msg = f"freq={freq} not implemented"
         raise NotImplementedError(msg)
 
-    tseries_path = os.path.join(
+    cache_path = os.path.join(
         cache_dir, tseries_fname(varname, component, experiment, ensemble, freq)
     )
-    tseries_path_genlock = tseries_path + ".genlock"
+    cache_path_genlock = cache_path + ".genlock"
     # if file doesn't exists and isn't being generated, generate it
     if clobber or (
-        not os.path.exists(tseries_path) and not os.path.exists(tseries_path_genlock)
+        not os.path.exists(cache_path) and not os.path.exists(cache_path_genlock)
     ):
-        # create genlock file, indicating that tseries_path is being generated
-        open(tseries_path_genlock, mode="w").close()
+        # create genlock file, indicating that cache_path is being generated
+        open(cache_path_genlock, mode="w").close()
         # generate timeseries
         try:
             if freq == "mon":
@@ -249,7 +249,7 @@ def _tseries_gen_wrap(
                 ds = esmlab_wrap.compute_ann_mean(xr.open_dataset(mon_path))
         except:
             # error occured, remove genlock file and re-raise exception, to ease subsequent attempts
-            os.remove(tseries_path_genlock)
+            os.remove(cache_path_genlock)
             raise
 
         # write generated timeseries
@@ -261,18 +261,18 @@ def _tseries_gen_wrap(
         for att_name in ["_NCProperties"]:
             if att_name in ds.attrs:
                 del ds.attrs[att_name]
-        ds.to_netcdf(tseries_path, format="NETCDF4_CLASSIC")
-        print_timestamp(f"{tseries_path} written")
+        ds.to_netcdf(cache_path, format="NETCDF4_CLASSIC")
+        print_timestamp(f"{cache_path} written")
 
-        # remove genlock file, indicating that tseries_path has been generated
-        os.remove(tseries_path_genlock)
+        # remove genlock file, indicating that cache_path has been generated
+        os.remove(cache_path_genlock)
 
     # wait until genlock file doesn't exists, in case it was being generated or written
-    while os.path.exists(tseries_path_genlock):
+    while os.path.exists(cache_path_genlock):
         print_timestamp("genlock file exists, waiting")
         time.sleep(5)
 
-    return tseries_path
+    return cache_path
 
 
 def _tseries_gen(varname, component, ensemble, entries, cluster_in):
@@ -368,7 +368,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
 
             var_units = clean_units(da_in_full.attrs["units"])
             if "unit_conv" in var_spec:
-                var_units = f'({var_spec["unit_conv"]})({var_units})'
+                var_units = f"({var_spec['unit_conv']})({var_units})"
 
             # construct averaging/integrating weight
             weight = get_weight(ds_in, component, reduce_dims)
@@ -412,7 +412,7 @@ def _tseries_gen(varname, component, ensemble, entries, cluster_in):
                     da_out.name = varname
                     da_out.attrs["long_name"] = "Integrated " + da_in.attrs["long_name"]
                     da_out.attrs["units"] = cf_units.Unit(
-                        f'({weight.attrs["units"]})({var_units})'
+                        f"({weight.attrs['units']})({var_units})"
                     ).format()
                 elif tseries_op == "average":
                     da_out = (da_in * weight).sum(dim=reduce_dims)
